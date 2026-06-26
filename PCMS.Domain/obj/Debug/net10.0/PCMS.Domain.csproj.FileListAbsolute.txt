@@ -1,0 +1,22 @@
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\bin\Debug\net10.0\PCMS.Domain.deps.json
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\bin\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\bin\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.AssemblyInfoInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.AssemblyInfo.cs
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.csproj.CoreCompileInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\refint\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Domain\obj\Debug\net10.0\ref\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\bin\Debug\net10.0\PCMS.Domain.deps.json
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\bin\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\bin\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.AssemblyInfoInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.AssemblyInfo.cs
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.csproj.CoreCompileInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\refint\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Domain\obj\Debug\net10.0\ref\PCMS.Domain.dll

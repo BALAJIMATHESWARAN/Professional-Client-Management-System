@@ -1,0 +1,7 @@
+<Solution>
+  <Project Path="PCMS.API/PCMS.API.csproj" />
+  <Project Path="PCMS.Application/PCMS.Application.csproj" />
+  <Project Path="PCMS.Domain/PCMS.Domain.csproj" />
+  <Project Path="PCMS.Infrastructure/PCMS.Infrastructure.csproj" />
+  <Project Path="PCMS.Tests/PCMS.Tests.csproj" />
+</Solution>

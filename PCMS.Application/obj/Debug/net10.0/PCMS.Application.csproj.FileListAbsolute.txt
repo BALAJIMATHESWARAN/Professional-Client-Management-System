@@ -1,0 +1,30 @@
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\bin\Debug\net10.0\PCMS.Application.deps.json
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\bin\Debug\net10.0\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\bin\Debug\net10.0\PCMS.Application.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\bin\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\bin\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.Application.csproj.AssemblyReference.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.Application.AssemblyInfoInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.Application.AssemblyInfo.cs
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.Application.csproj.CoreCompileInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.App.59452670.Up2Date
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\refint\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\PCMS.Application.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Application\obj\Debug\net10.0\ref\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\bin\Debug\net10.0\PCMS.Application.deps.json
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\bin\Debug\net10.0\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\bin\Debug\net10.0\PCMS.Application.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\bin\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\bin\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.Application.csproj.AssemblyReference.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.Application.AssemblyInfoInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.Application.AssemblyInfo.cs
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.Application.csproj.CoreCompileInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.App.59452670.Up2Date
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\refint\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\PCMS.Application.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Application\obj\Debug\net10.0\ref\PCMS.Application.dll

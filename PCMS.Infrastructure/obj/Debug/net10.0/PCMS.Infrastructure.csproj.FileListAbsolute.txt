@@ -1,0 +1,38 @@
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.deps.json
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.runtimeconfig.json
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Application.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.AssemblyInfo.cs
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Inf.63D6245F.Up2Date
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\refint\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.genruntimeconfig.cache
+C:\Users\BALAJI SKM\Downloads\PCMS\PCMS.Infrastructure\obj\Debug\net10.0\ref\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.deps.json
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.runtimeconfig.json
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Infrastructure.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Application.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Domain.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Domain.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\bin\Debug\net10.0\PCMS.Application.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.csproj.AssemblyReference.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.AssemblyInfoInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.AssemblyInfo.cs
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Inf.63D6245F.Up2Date
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\refint\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.pdb
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.genruntimeconfig.cache
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\ref\PCMS.Infrastructure.dll
