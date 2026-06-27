@@ -4,10 +4,12 @@ import type { LoginResponse } from '../api';
 import logoImg from '../assets/logo.png';
 
 interface LoginProps {
+  onLoginStart?: () => void;
   onLoginSuccess: (response: LoginResponse) => void;
+  onLoginFailure?: () => void;
 }
 
-export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
+export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLoginFailure }) => {
   const [activeForm, setActiveForm] = useState<'login' | 'forgot'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -283,12 +285,14 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
 
     setLoading(true);
     setError(null);
+    onLoginStart?.();
 
     try {
       const response = await api.login(email, password);
       onLoginSuccess(response);
     } catch (err: any) {
       setError(err.message || 'Login failed. Please verify your credentials.');
+      onLoginFailure?.();
     } finally {
       setLoading(false);
     }
@@ -516,142 +520,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
             </form>
           </div>
         )}
-      {/* Top-notch loading animation in mild shade overlay */}
-      {(loading || forgotLoading) && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.65)',
-          backdropFilter: 'blur(8px)',
-          zIndex: 99999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          animation: 'fadeInApp 0.3s ease-out'
-        }}>
-          <style>{`
-            @keyframes fadeInApp {
-              from { opacity: 0; }
-              to { opacity: 1; }
-            }
-            @keyframes orbitRotation {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(360deg); }
-            }
-            @keyframes counterRotation {
-              0% { transform: rotate(0deg); }
-              100% { transform: rotate(-360deg); }
-            }
-            @keyframes pulseCore {
-              0%, 100% { transform: scale(1); box-shadow: 0 0 30px rgba(255, 255, 255, 0.1); }
-              50% { transform: scale(1.05); box-shadow: 0 0 45px rgba(88, 166, 255, 0.25); }
-            }
-          `}</style>
-          
-          <div style={{ position: 'relative', width: '180px', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            {/* Dashed Orbital Path */}
-            <div style={{
-              position: 'absolute',
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
-              border: '2px dashed rgba(255, 255, 255, 0.12)',
-              animation: 'orbitRotation 8s linear infinite'
-            }}>
-              {/* Doctor Bubble (Stethoscope) */}
-              <div style={{
-                position: 'absolute',
-                top: '-20px',
-                left: 'calc(50% - 20px)',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: '#E42527',
-                boxShadow: '0 0 15px rgba(228, 37, 39, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                animation: 'counterRotation 8s linear infinite'
-              }} title="Medical Console">
-                <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M4.8 2.3A2.3 2.3 0 0 0 2.5 4.6v4.5A4.7 4.7 0 0 0 7.2 13.8h9.6a4.7 4.7 0 0 0 4.7-4.7V4.6a2.3 2.3 0 0 0-2.3-2.3" />
-                  <path d="M12 13.8v4.5a3.7 3.7 0 0 0 3.7 3.7H17" />
-                  <circle cx="19" cy="22" r="2" />
-                </svg>
-              </div>
-
-              {/* Advocate Bubble (Balance Scales) */}
-              <div style={{
-                position: 'absolute',
-                bottom: '10px',
-                left: '-15px',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: '#226DB4',
-                boxShadow: '0 0 15px rgba(34, 109, 180, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                animation: 'counterRotation 8s linear infinite'
-              }} title="Legal Console">
-                <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="2" x2="12" y2="22" />
-                  <line x1="5" y1="7" x2="19" y2="7" />
-                  <path d="M5 7L2 15h6L5 7zM19 7l-3 15h6l-3-15z" />
-                </svg>
-              </div>
-
-              {/* Accountant Bubble (Calculator) */}
-              <div style={{
-                position: 'absolute',
-                bottom: '10px',
-                right: '-15px',
-                width: '40px',
-                height: '40px',
-                borderRadius: '50%',
-                backgroundColor: '#089949',
-                boxShadow: '0 0 15px rgba(8, 153, 73, 0.6)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                animation: 'counterRotation 8s linear infinite'
-              }} title="Finance Console">
-                <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                  <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
-                  <line x1="9" y1="22" x2="9" y2="16" />
-                  <line x1="8" y1="6" x2="16" y2="6" />
-                  <line x1="16" y1="16" x2="16" y2="22" />
-                  <line x1="8" y1="10" x2="16" y2="10" />
-                  <line x1="8" y1="14" x2="16" y2="14" />
-                </svg>
-              </div>
-            </div>
-
-            {/* Orbit Core (PCMS Text / Logo) */}
-            <div style={{
-              width: '90px',
-              height: '90px',
-              borderRadius: '50%',
-              backgroundColor: 'rgba(255, 255, 255, 0.03)',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              animation: 'pulseCore 3s ease-in-out infinite',
-              backdropFilter: 'blur(4px)'
-            }}>
-              <span style={{ fontSize: '1.2rem', fontWeight: 900, letterSpacing: '2px', color: '#ffffff' }}>PCMS</span>
-              <span style={{ fontSize: '0.6rem', textTransform: 'uppercase', letterSpacing: '1px', color: 'rgba(255, 255, 255, 0.4)', marginTop: '2px' }}>Core</span>
-            </div>
-          </div>
-        </div>
-      )}
+      </div>
     </div>
   );
 };

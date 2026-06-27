@@ -31,10 +31,12 @@ builder.Services.AddScoped<IUserTenantModuleRepository, UserTenantModuleReposito
 builder.Services.AddScoped<IModuleRepository,   ModuleRepository>();
 builder.Services.AddScoped<IDynamicFieldRepository, DynamicFieldRepository>();
 builder.Services.AddScoped<IDynamicRecordRepository, DynamicRecordRepository>();
+builder.Services.AddScoped<IAuditLogRepository, PCMS.Infrastructure.Repositories.AuditLogRepository>();
 
 // Services
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddScoped<IAuditLogService, PCMS.Infrastructure.Services.AuditLogService>();
+builder.Services.AddScoped<ICurrentUserService, PCMS.Infrastructure.Services.CurrentUserService>();
+builder.Services.AddScoped<IAuditLogService, PCMS.Application.Services.AuditLogService>();
 builder.Services.AddScoped<ITenantService, TenantService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IAdminService, AdminService>();

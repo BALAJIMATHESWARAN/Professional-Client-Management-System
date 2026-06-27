@@ -122,3 +122,5 @@ C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Tests\obj\Debug\net10.0\refint\PC
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Tests\obj\Debug\net10.0\PCMS.Tests.pdb
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Tests\obj\Debug\net10.0\PCMS.Tests.genruntimeconfig.cache
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Tests\obj\Debug\net10.0\ref\PCMS.Tests.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Tests\obj\Debug\net10.0\PCMS.Tests.sourcelink.json
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Tests\bin\Debug\net10.0\Microsoft.Extensions.Configuration.Abstractions.dll

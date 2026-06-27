@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PCMS.API")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+4395fb61092d820dca9b7a3bda21f8c73866990a")]
 [assembly: System.Reflection.AssemblyProductAttribute("PCMS.API")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PCMS.API")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

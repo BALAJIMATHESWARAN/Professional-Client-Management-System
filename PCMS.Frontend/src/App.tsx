@@ -100,7 +100,7 @@ function App() {
         setIsTransitioning(false);
       } else {
         const userTenants = res.tenants || [];
-        
+
         if (userTenants.length === 0) {
           alert('Your account is not assigned to any tenants. Please contact your system administrator.');
           api.logout();
@@ -150,7 +150,7 @@ function App() {
 
   const handleTenantSelected = (tenantId: number, _token: string) => {
     if (!user || !user.availableTenants) return;
-    
+
     const selectedTenant = user.availableTenants.find(t => t.tenantId === tenantId);
     if (!selectedTenant) return;
 
@@ -214,7 +214,16 @@ function App() {
   return (
     <>
       {view === 'login' && (
-        <Login onLoginSuccess={handleLoginSuccess} />
+        <Login
+          onLoginStart={() => {
+            setIsTransitioning(true);
+            setTransitionMessage('Authenticating...');
+          }}
+          onLoginSuccess={handleLoginSuccess}
+          onLoginFailure={() => {
+            setIsTransitioning(false);
+          }}
+        />
       )}
 
       {view === 'reset-password' && (
@@ -260,8 +269,8 @@ function App() {
           left: 0,
           right: 0,
           bottom: 0,
-          backgroundColor: 'rgba(15, 23, 42, 0.95)',
-          backdropFilter: 'blur(12px)',
+          backgroundColor: 'rgba(15, 23, 42, 0.65)',
+          backdropFilter: 'blur(8px)',
           zIndex: 99999,
           display: 'flex',
           flexDirection: 'column',
@@ -287,7 +296,7 @@ function App() {
               50% { transform: scale(1.05); box-shadow: 0 0 45px rgba(88, 166, 255, 0.25); }
             }
           `}</style>
-          
+
           <div style={{ position: 'relative', width: '180px', height: '180px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             {/* Dashed Orbital Path */}
             <div style={{
@@ -295,10 +304,10 @@ function App() {
               width: '100%',
               height: '100%',
               borderRadius: '50%',
-              border: '2px dashed rgba(255, 255, 255, 0.08)',
+              border: '2px dashed rgba(255, 255, 255, 0.12)',
               animation: 'orbitRotation 8s linear infinite'
             }}>
-              {/* Doctor Bubble (ECG heartbeat) */}
+              {/* Doctor Bubble (Stethoscope) */}
               <div style={{
                 position: 'absolute',
                 top: '-20px',
@@ -356,14 +365,14 @@ function App() {
                 alignItems: 'center',
                 justifyContent: 'center',
                 animation: 'counterRotation 8s linear infinite'
-              }} title="Accounting Console">
+              }} title="Finance Console">
                 <svg style={{ width: '20px', height: '20px' }} viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
-                  <rect x="8" y="5" width="8" height="4" />
-                  <line x1="8" y1="12" x2="10" y2="12" />
-                  <line x1="14" y1="12" x2="16" y2="12" />
-                  <line x1="8" y1="16" x2="10" y2="16" />
-                  <line x1="14" y1="16" x2="16" y2="16" />
+                  <line x1="9" y1="22" x2="9" y2="16" />
+                  <line x1="8" y1="6" x2="16" y2="6" />
+                  <line x1="16" y1="16" x2="16" y2="22" />
+                  <line x1="8" y1="10" x2="16" y2="10" />
+                  <line x1="8" y1="14" x2="16" y2="14" />
                 </svg>
               </div>
             </div>

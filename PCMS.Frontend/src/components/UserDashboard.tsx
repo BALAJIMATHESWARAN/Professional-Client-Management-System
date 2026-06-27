@@ -327,7 +327,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     // Reset toolbar settings when routing to a new workspace tab
     setRecordSearch('');
     setRecordFilter('all');
-    setRecordSort('newest');
+    setRecordSort('status');
     setRecordView('table');
 
     try {
@@ -361,7 +361,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     })
     .sort((a, b) => {
       if (recordSort === 'status') {
-        const statusField = fields.find(f => f.name.toLowerCase() === 'status');
+        const statusField = fields.find(f => f.fieldName.toLowerCase() === 'status');
         if (statusField) {
           const valA = a.fieldValues[statusField.id] || '';
           const valB = b.fieldValues[statusField.id] || '';

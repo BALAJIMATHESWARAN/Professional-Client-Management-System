@@ -280,3 +280,4 @@ C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.API\obj\Debug\net10.0\refint\PCMS
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.API\obj\Debug\net10.0\PCMS.API.pdb
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.API\obj\Debug\net10.0\PCMS.API.genruntimeconfig.cache
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.API\obj\Debug\net10.0\ref\PCMS.API.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.API\obj\Debug\net10.0\PCMS.API.sourcelink.json

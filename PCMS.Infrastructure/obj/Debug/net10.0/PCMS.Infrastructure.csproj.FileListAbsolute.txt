@@ -36,3 +36,4 @@ C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.pdb
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.genruntimeconfig.cache
 C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\ref\PCMS.Infrastructure.dll
+C:\Users\BALAJI SKM\Downloads\PCMS - Copy\PCMS.Infrastructure\obj\Debug\net10.0\PCMS.Infrastructure.sourcelink.json
