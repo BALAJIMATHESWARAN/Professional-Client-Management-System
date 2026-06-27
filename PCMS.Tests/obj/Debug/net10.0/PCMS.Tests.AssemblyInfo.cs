@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PCMS.Tests")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+2f4bfc905410e675a3064e1e7bdd60bb9a38db7b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9ad11ebd0a2ce8cf10447eb51360caed67115c69")]
 [assembly: System.Reflection.AssemblyProductAttribute("PCMS.Tests")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PCMS.Tests")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
