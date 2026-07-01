@@ -214,6 +214,30 @@ function App() {
     setIsTransitioning(true);
     setTransitionDuration(1000);
     setTransitionMessage('Returning to Workspace Selection...');
+    const keys = [
+      'pcms_user_active_module_id',
+      'pcms_workspace_tab',
+      'pcms_doctor_subview',
+      'pcms_editing_record',
+      'pcms_record_form_open',
+      'pcms_form_field_values',
+      'pcms_doctor_drawer_open',
+      'pcms_editing_doctor',
+      'pcms_doc_form',
+      'pcms_staff_tab',
+      'pcms_staff_drawer_open',
+      'pcms_editing_staff',
+      'pcms_staff_form',
+      'pcms_patient_drawer_open',
+      'pcms_editing_patient',
+      'pcms_patient_form',
+      'pcms_appointment_drawer_open',
+      'pcms_appointment_form',
+      'pcms_role_drawer_open',
+      'pcms_editing_role',
+      'pcms_role_form'
+    ];
+    keys.forEach(k => localStorage.removeItem(k));
     setTimeout(() => {
       if (user && !user.isSuperAdmin && user.availableTenants && user.availableTenants.length > 1) {
         const updatedUser = {

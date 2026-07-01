@@ -18,6 +18,8 @@ public class DoctorProfileRepository : IDoctorProfileRepository
     {
         return await _context.DoctorProfiles
             .Include(d => d.User)
+            .Include(d => d.DynamicRecord)
+            .ThenInclude(r => r!.Values)
             .FirstOrDefaultAsync(d => d.Id == id);
     }
 
@@ -25,6 +27,8 @@ public class DoctorProfileRepository : IDoctorProfileRepository
     {
         return await _context.DoctorProfiles
             .Include(d => d.User)
+            .Include(d => d.DynamicRecord)
+            .ThenInclude(r => r!.Values)
             .FirstOrDefaultAsync(d => d.DoctorCode == doctorCode);
     }
 
@@ -42,7 +46,10 @@ public class DoctorProfileRepository : IDoctorProfileRepository
 
     public async Task<List<DoctorProfile>> GetAll(string? search = null, string? specialization = null)
     {
-        IQueryable<DoctorProfile> query = _context.DoctorProfiles.Include(d => d.User);
+        IQueryable<DoctorProfile> query = _context.DoctorProfiles
+            .Include(d => d.User)
+            .Include(d => d.DynamicRecord)
+            .ThenInclude(r => r!.Values);
 
         if (!string.IsNullOrEmpty(search))
         {

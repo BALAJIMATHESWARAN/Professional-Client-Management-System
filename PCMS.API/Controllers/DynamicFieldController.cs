@@ -32,7 +32,7 @@ public class DynamicFieldController : ControllerBase
     }
 
     [HttpGet("module/{moduleId}")]
-    public async Task<IActionResult> GetFields(int moduleId)
+    public async Task<IActionResult> GetFields(int moduleId, [FromQuery] string? entityName)
     {
         var tenantIdClaim = User.FindFirst("TenantId")?.Value;
         if (tenantIdClaim == null)
@@ -43,7 +43,7 @@ public class DynamicFieldController : ControllerBase
         }
 
         int tenantId = int.Parse(tenantIdClaim);
-        var result = await _formService.GetFields(tenantId, moduleId);
+        var result = await _formService.GetFields(tenantId, moduleId, entityName);
         return Ok(result);
     }
 

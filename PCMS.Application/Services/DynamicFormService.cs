@@ -21,9 +21,22 @@ public class DynamicFormService : IDynamicFormService
     }
 
     // --- Fields Configuration ---
-    public async Task<List<DynamicFieldDto>> GetFields(int tenantId, int moduleId)
+    public async Task<List<DynamicFieldDto>> GetFields(int tenantId, int moduleId, string? entityName = null)
     {
         var fields = await _fieldRepo.GetFieldsByTenantAndModule(tenantId, moduleId);
+        if (entityName == "ALL")
+        {
+            return fields.Select(MapToFieldDto).ToList();
+        }
+
+        if (!string.IsNullOrEmpty(entityName))
+        {
+            fields = fields.Where(f => f.EntityName == entityName).ToList();
+        }
+        else
+        {
+            fields = fields.Where(f => string.IsNullOrEmpty(f.EntityName) || f.EntityName == "Patient").ToList();
+        }
         return fields.Select(MapToFieldDto).ToList();
     }
 
@@ -41,6 +54,7 @@ public class DynamicFormService : IDynamicFormService
             ModuleId = dto.ModuleId,
             FieldName = dto.FieldName,
             FieldType = dto.FieldType,
+            EntityName = dto.EntityName,
             IsRequired = dto.IsRequired,
             DisplayOrder = dto.DisplayOrder,
             IsActive = true,
@@ -49,7 +63,7 @@ public class DynamicFormService : IDynamicFormService
         };
 
         await _fieldRepo.Add(field);
-        await _auditLogService.LogAsync("CREATE_FIELD", "DynamicField", field.Id.ToString(), $"Created dynamic field '{field.FieldName}' (Type: {field.FieldType}) for Module ID {field.ModuleId}", currentUserId, null, field.TenantId);
+        await _auditLogService.LogAsync("CREATE_FIELD", "DynamicField", field.Id.ToString(), $"Created dynamic field '{field.FieldName}' (Type: {field.FieldType}, Entity: {field.EntityName}) for Module ID {field.ModuleId}", currentUserId, null, field.TenantId);
         return MapToFieldDto(field);
     }
 
@@ -63,6 +77,7 @@ public class DynamicFormService : IDynamicFormService
 
         field.FieldName = dto.FieldName;
         field.FieldType = dto.FieldType;
+        field.EntityName = dto.EntityName;
         field.IsRequired = dto.IsRequired;
         field.DisplayOrder = dto.DisplayOrder;
         field.IsActive = dto.IsActive;
@@ -70,7 +85,7 @@ public class DynamicFormService : IDynamicFormService
         field.ModifiedAt = DateTime.UtcNow;
 
         await _fieldRepo.Update(field);
-        await _auditLogService.LogAsync("UPDATE_FIELD", "DynamicField", field.Id.ToString(), $"Updated dynamic field '{field.FieldName}' (Type: {field.FieldType}) for Module ID {field.ModuleId}", currentUserId, null, field.TenantId);
+        await _auditLogService.LogAsync("UPDATE_FIELD", "DynamicField", field.Id.ToString(), $"Updated dynamic field '{field.FieldName}' (Type: {field.FieldType}, Entity: {field.EntityName}) for Module ID {field.ModuleId}", currentUserId, null, field.TenantId);
     }
 
     public async Task DeleteField(int id, int currentUserId)
@@ -207,6 +222,7 @@ public class DynamicFormService : IDynamicFormService
         TenantId = field.TenantId,
         FieldName = field.FieldName,
         FieldType = field.FieldType,
+        EntityName = field.EntityName,
         IsRequired = field.IsRequired,
         DisplayOrder = field.DisplayOrder,
         IsActive = field.IsActive

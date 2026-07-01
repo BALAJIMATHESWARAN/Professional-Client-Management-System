@@ -18,6 +18,8 @@ public class NurseProfileRepository : INurseProfileRepository
     {
         return await _context.NurseProfiles
             .Include(n => n.User)
+            .Include(n => n.Doctor)
+            .ThenInclude(d => d!.User)
             .FirstOrDefaultAsync(n => n.Id == id);
     }
 
@@ -35,7 +37,11 @@ public class NurseProfileRepository : INurseProfileRepository
 
     public async Task<List<NurseProfile>> GetAll()
     {
-        return await _context.NurseProfiles.Include(n => n.User).ToListAsync();
+        return await _context.NurseProfiles
+            .Include(n => n.User)
+            .Include(n => n.Doctor)
+            .ThenInclude(d => d!.User)
+            .ToListAsync();
     }
 
     public async Task<bool> EmployeeCodeExists(string employeeCode)

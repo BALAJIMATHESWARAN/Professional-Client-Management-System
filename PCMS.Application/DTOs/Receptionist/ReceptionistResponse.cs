@@ -10,4 +10,6 @@ public class ReceptionistResponse
     public string? Department { get; set; }
     public required string Status { get; set; }
     public bool IsActive { get; set; }
+    public int? DoctorId { get; set; }
+    public string? DoctorName { get; set; }
 }

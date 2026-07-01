@@ -10,6 +10,8 @@ public class DynamicField : BaseEntity
 
     public required string FieldType { get; set; }
 
+    public string? EntityName { get; set; }
+
     public bool IsRequired { get; set; }
 
     public int DisplayOrder { get; set; }

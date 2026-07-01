@@ -84,7 +84,14 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
   moduleId,
 }) => {
   type SubView = 'dashboard' | 'doctors' | 'staff' | 'patients' | 'appointments' | 'roles';
-  const [subView, setSubView] = useState<SubView>('dashboard');
+  const [subView, setSubView] = useState<SubView>(() => {
+    return (localStorage.getItem('pcms_doctor_subview') as SubView) || 'dashboard';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_doctor_subview', subView);
+  }, [subView]);
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -117,24 +124,111 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
   const [specializations, setSpecializations] = useState<string[]>([]);
   const [docSearch, setDocSearch]       = useState('');
   const [docSpecFilter, setDocSpecFilter] = useState('');
-  const [isDocDrawerOpen, setIsDocDrawerOpen] = useState(false);
-  const [editingDoctor, setEditingDoctor] = useState<any | null>(null);
-  const [docForm, setDocForm] = useState({
-    userName: '', email: '', password: '', doctorCode: '',
-    specialization: '', qualification: '', experienceYears: 0,
-    consultationFee: 0, phoneNumber: '', status: 'Active', isActive: true,
+  const [doctorFields, setDoctorFields] = useState<any[]>([]);
+  const [isQualDropdownOpen, setIsQualDropdownOpen] = useState(false);
+  const [isSpecDropdownOpen, setIsSpecDropdownOpen] = useState(false);
+
+  const qualificationsList = ["MBBS", "MD", "MS", "BDS", "MDS", "BAMS", "BHMS", "PhD", "Others"];
+  const defaultSpecializationsList = ["Cardiology", "Pediatrics", "Dermatology", "General Medicine", "Orthopedics", "Neurology", "Gynecology", "Psychiatry", "Radiology", "Others"];
+
+  const handleQualCheckboxChange = (qual: string) => {
+    const currentQuals = docForm.qualification ? docForm.qualification.split(',').map((x: string) => x.trim()).filter(Boolean) : [];
+    const newQuals = currentQuals.includes(qual) ? currentQuals.filter((x: string) => x !== qual) : [...currentQuals, qual];
+    setDocForm({ ...docForm, qualification: newQuals.join(', ') });
+  };
+
+  const handleSpecCheckboxChange = (spec: string) => {
+    const currentSpecs = docForm.specialization ? docForm.specialization.split(',').map((x: string) => x.trim()).filter(Boolean) : [];
+    const newSpecs = currentSpecs.includes(spec) ? currentSpecs.filter((x: string) => x !== spec) : [...currentSpecs, spec];
+    setDocForm({ ...docForm, specialization: newSpecs.join(', ') });
+  };
+
+  const isPasswordStrong = (pwd: string) => {
+    if (!pwd || pwd.length < 8) return false;
+    if (!/[A-Z]/.test(pwd)) return false;
+    if (!/[a-z]/.test(pwd)) return false;
+    if (!/[0-9]/.test(pwd)) return false;
+    if (!/[^A-Za-z0-9]/.test(pwd)) return false;
+    return true;
+  };
+
+  const [isDocDrawerOpen, setIsDocDrawerOpen] = useState(() => {
+    return localStorage.getItem('pcms_doctor_drawer_open') === 'true';
+  });
+  const [editingDoctor, setEditingDoctor] = useState<any | null>(() => {
+    const val = localStorage.getItem('pcms_editing_doctor');
+    return val ? JSON.parse(val) : null;
+  });
+  const [docForm, setDocForm] = useState(() => {
+    const val = localStorage.getItem('pcms_doc_form');
+    return val ? JSON.parse(val) : {
+      userName: '', email: '', password: '', doctorCode: '',
+      specialization: '', qualification: '', experienceYears: 0,
+      consultationFee: 0, phoneNumber: '', status: 'Active', isActive: true,
+      fullLegalName: '', mobileNumber: '', registrationNumber: '',
+      medicalCouncil: 'State Medical Council', registrationCertificate: '',
+      verificationStatus: 'Pending',
+      customFields: {} as Record<string, string>,
+    };
   });
 
+  useEffect(() => {
+    localStorage.setItem('pcms_doctor_drawer_open', String(isDocDrawerOpen));
+  }, [isDocDrawerOpen]);
+
+  useEffect(() => {
+    if (editingDoctor) {
+      localStorage.setItem('pcms_editing_doctor', JSON.stringify(editingDoctor));
+    } else {
+      localStorage.removeItem('pcms_editing_doctor');
+    }
+  }, [editingDoctor]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_doc_form', JSON.stringify(docForm));
+  }, [docForm]);
+
   // Staff
-  const [staffTab, setStaffTab]         = useState<'receptionist' | 'nurse'>('receptionist');
+  const [staffTab, setStaffTab]         = useState<'receptionist' | 'nurse'>(() => {
+    return (localStorage.getItem('pcms_staff_tab') as any) || 'receptionist';
+  });
   const [receptionists, setReceptionists] = useState<any[]>([]);
   const [nurses, setNurses]             = useState<any[]>([]);
-  const [isStaffDrawerOpen, setIsStaffDrawerOpen] = useState(false);
-  const [editingStaff, setEditingStaff] = useState<any | null>(null);
-  const [staffForm, setStaffForm] = useState({
-    userName: '', email: '', password: '', employeeCode: '',
-    phoneNumber: '', department: '', status: 'Active', isActive: true,
+  const [isStaffDrawerOpen, setIsStaffDrawerOpen] = useState(() => {
+    return localStorage.getItem('pcms_staff_drawer_open') === 'true';
   });
+  const [editingStaff, setEditingStaff] = useState<any | null>(() => {
+    const val = localStorage.getItem('pcms_editing_staff');
+    return val ? JSON.parse(val) : null;
+  });
+  const [staffForm, setStaffForm] = useState(() => {
+    const val = localStorage.getItem('pcms_staff_form');
+    return val ? JSON.parse(val) : {
+      userName: '', email: '', password: '', employeeCode: '',
+      phoneNumber: '', department: '', status: 'Active', isActive: true,
+      doctorId: '' as string | number | null,
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_staff_tab', staffTab);
+  }, [staffTab]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_staff_drawer_open', String(isStaffDrawerOpen));
+  }, [isStaffDrawerOpen]);
+
+  useEffect(() => {
+    if (editingStaff) {
+      localStorage.setItem('pcms_editing_staff', JSON.stringify(editingStaff));
+    } else {
+      localStorage.removeItem('pcms_editing_staff');
+    }
+  }, [editingStaff]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_staff_form', JSON.stringify(staffForm));
+  }, [staffForm]);
 
   // Patients
   const [patients, setPatients]         = useState<any[]>([]);
@@ -142,33 +236,103 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
   const [patPage, setPatPage]           = useState(1);
   const [patTotalCount, setPatTotalCount] = useState(0);
   const [dynamicFields, setDynamicFields] = useState<any[]>([]);
-  const [isPatDrawerOpen, setIsPatDrawerOpen] = useState(false);
-  const [editingPatient, setEditingPatient] = useState<any | null>(null);
-  const [patientForm, setPatientForm] = useState({
-    patientCode: '', fullName: '', dateOfBirth: '', gender: 'Male',
-    phoneNumber: '', email: '', address: '', emergencyContact: '',
-    bloodGroup: 'O+', whatsAppNumber: '', whatsAppConsent: false,
-    customFields: {} as Record<string, string>,
+  const [isPatDrawerOpen, setIsPatDrawerOpen] = useState(() => {
+    return localStorage.getItem('pcms_patient_drawer_open') === 'true';
   });
+  const [editingPatient, setEditingPatient] = useState<any | null>(() => {
+    const val = localStorage.getItem('pcms_editing_patient');
+    return val ? JSON.parse(val) : null;
+  });
+  const [patientForm, setPatientForm] = useState(() => {
+    const val = localStorage.getItem('pcms_patient_form');
+    return val ? JSON.parse(val) : {
+      patientCode: '', fullName: '', dateOfBirth: '', gender: 'Male',
+      phoneNumber: '', email: '', address: '', emergencyContact: '',
+      bloodGroup: 'O+', whatsAppNumber: '', whatsAppConsent: false,
+      customFields: {} as Record<string, string>,
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_patient_drawer_open', String(isPatDrawerOpen));
+  }, [isPatDrawerOpen]);
+
+  useEffect(() => {
+    if (editingPatient) {
+      localStorage.setItem('pcms_editing_patient', JSON.stringify(editingPatient));
+    } else {
+      localStorage.removeItem('pcms_editing_patient');
+    }
+  }, [editingPatient]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_patient_form', JSON.stringify(patientForm));
+  }, [patientForm]);
+
+  // Helper: Format Date to YYYY-MM-DD local
+  const formatDateLocal = (d: Date) => {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
 
   // Appointments
   const [appointments, setAppointments] = useState<any[]>([]);
-  const [appFilterDate, setAppFilterDate] = useState(new Date().toISOString().split('T')[0]);
-  const [isAppDrawerOpen, setIsAppDrawerOpen] = useState(false);
-  const [appForm, setAppForm] = useState({
-    patientId: 0, doctorId: 0,
-    appointmentDate: new Date().toISOString().substring(0, 16),
-    appointmentType: 'Scheduled', notes: '',
+  const [appFilterDate, setAppFilterDate] = useState(() => formatDateLocal(new Date()));
+  const [calendarViewDate, setCalendarViewDate] = useState(() => new Date());
+  const [isAppDrawerOpen, setIsAppDrawerOpen] = useState(() => {
+    return localStorage.getItem('pcms_appointment_drawer_open') === 'true';
   });
+  const [appForm, setAppForm] = useState(() => {
+    const val = localStorage.getItem('pcms_appointment_form');
+    return val ? JSON.parse(val) : {
+      patientId: 0, doctorId: 0,
+      appointmentDate: new Date().toISOString().substring(0, 16),
+      appointmentType: 'Scheduled', notes: '',
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_appointment_drawer_open', String(isAppDrawerOpen));
+  }, [isAppDrawerOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_appointment_form', JSON.stringify(appForm));
+  }, [appForm]);
 
   // Roles
   const [rolesList, setRolesList]           = useState<any[]>([]);
   const [permissionsList, setPermissionsList] = useState<any[]>([]);
-  const [isRoleDrawerOpen, setIsRoleDrawerOpen] = useState(false);
-  const [editingRole, setEditingRole]       = useState<any | null>(null);
-  const [roleForm, setRoleForm] = useState({
-    name: '', isActive: true, permissionIds: [] as number[], widgetKeys: [] as string[],
+  const [isRoleDrawerOpen, setIsRoleDrawerOpen] = useState(() => {
+    return localStorage.getItem('pcms_role_drawer_open') === 'true';
   });
+  const [editingRole, setEditingRole]       = useState<any | null>(() => {
+    const val = localStorage.getItem('pcms_editing_role');
+    return val ? JSON.parse(val) : null;
+  });
+  const [roleForm, setRoleForm] = useState(() => {
+    const val = localStorage.getItem('pcms_role_form');
+    return val ? JSON.parse(val) : {
+      name: '', isActive: true, permissionIds: [] as number[], widgetKeys: [] as string[],
+    };
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_role_drawer_open', String(isRoleDrawerOpen));
+  }, [isRoleDrawerOpen]);
+
+  useEffect(() => {
+    if (editingRole) {
+      localStorage.setItem('pcms_editing_role', JSON.stringify(editingRole));
+    } else {
+      localStorage.removeItem('pcms_editing_role');
+    }
+  }, [editingRole]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_role_form', JSON.stringify(roleForm));
+  }, [roleForm]);
 
   // ── Data Loaders ───────────────────────────────────────────────────────────
 
@@ -199,21 +363,26 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
   }, []);
 
   const loadDoctors = useCallback(async () => {
-    const [list, specs] = await Promise.all([
+    const [list, specs, fields] = await Promise.all([
       api.getDoctors(docSearch, docSpecFilter),
       api.getDoctorSpecializations(),
+      api.getFields(moduleId, 'Doctor'),
     ]);
     setDoctors(list);
     setSpecializations(specs);
-  }, [docSearch, docSpecFilter]);
+    setDoctorFields(fields);
+  }, [docSearch, docSpecFilter, moduleId]);
 
   const loadStaff = useCallback(async () => {
-    if (staffTab === 'receptionist') {
-      setReceptionists(await api.getReceptionists());
-    } else {
-      setNurses(await api.getNurses());
-    }
-  }, [staffTab]);
+    const [recepts, nurs, docs] = await Promise.all([
+      api.getReceptionists(),
+      api.getNurses(),
+      api.getDoctors(),
+    ]);
+    setDoctors(docs);
+    setReceptionists(recepts);
+    setNurses(nurs);
+  }, []);
 
   const loadPatients = useCallback(async () => {
     const [res, fields] = await Promise.all([
@@ -227,14 +396,14 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
 
   const loadAppointments = useCallback(async () => {
     const [list, docsList, patsRes] = await Promise.all([
-      api.getAppointments(appFilterDate),
+      api.getAppointments(),
       api.getDoctors(),
       api.getPatients('', 1, 100),
     ]);
     setAppointments(list);
     setDoctors(docsList);
     setPatients(patsRes.patients);
-  }, [appFilterDate]);
+  }, []);
 
   const loadRoles = useCallback(async () => {
     const [roles, perms] = await Promise.all([api.getRoles(), api.getPermissions()]);
@@ -250,7 +419,7 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
       patients: loadPatients, appointments: loadAppointments, roles: loadRoles,
     };
     loaders[subView]().catch(e => setError(e.message || 'Failed to load data.')).finally(() => setLoading(false));
-  }, [subView, docSearch, docSpecFilter, staffTab, patSearch, patPage, appFilterDate,
+  }, [subView, docSearch, docSpecFilter, staffTab, patSearch, patPage,
       loadDashboard, loadDoctors, loadStaff, loadPatients, loadAppointments, loadRoles]);
 
   // ── Handlers ────────────────────────────────────────────────────────────────
@@ -271,6 +440,10 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
   // ── Doctor Handlers
   const handleSaveDoctor = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingDoctor && !isPasswordStrong(docForm.password)) {
+      setError('Password must meet strength criteria (minimum 8 characters, containing uppercase, lowercase, digit, and special character).');
+      return;
+    }
     await withFeedback(async () => {
       if (editingDoctor) await api.updateDoctor(editingDoctor.id, docForm);
       else await api.createDoctor(docForm);
@@ -284,26 +457,41 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
     setDocForm({ userName: doc.userName, email: doc.email, password: '', doctorCode: doc.doctorCode,
       specialization: doc.specialization, qualification: doc.qualification || '',
       experienceYears: doc.experienceYears, consultationFee: doc.consultationFee,
-      phoneNumber: doc.phoneNumber || '', status: doc.status, isActive: doc.isActive });
+      phoneNumber: doc.phoneNumber || '', status: doc.status, isActive: doc.isActive,
+      fullLegalName: doc.fullLegalName || '', mobileNumber: doc.mobileNumber || '',
+      registrationNumber: doc.registrationNumber || '', medicalCouncil: doc.medicalCouncil || 'State Medical Council',
+      registrationCertificate: doc.registrationCertificate || '', verificationStatus: doc.verificationStatus || 'Pending',
+      customFields: doc.customFields || {} });
     setIsDocDrawerOpen(true);
   };
   const openDocCreate = () => {
     setEditingDoctor(null);
     setDocForm({ userName: '', email: '', password: '', doctorCode: '', specialization: '',
-      qualification: '', experienceYears: 0, consultationFee: 0, phoneNumber: '', status: 'Active', isActive: true });
+      qualification: '', experienceYears: 0, consultationFee: 0, phoneNumber: '', status: 'Active', isActive: true,
+      fullLegalName: '', mobileNumber: '', registrationNumber: '', medicalCouncil: 'State Medical Council',
+      registrationCertificate: '', verificationStatus: 'Pending',
+      customFields: {} });
     setIsDocDrawerOpen(true);
   };
 
   // ── Staff Handlers
   const handleSaveStaff = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!editingStaff && !isPasswordStrong(staffForm.password)) {
+      setError('Password must meet strength criteria (minimum 8 characters, containing uppercase, lowercase, digit, and special character).');
+      return;
+    }
+    const payload = {
+      ...staffForm,
+      doctorId: staffForm.doctorId ? Number(staffForm.doctorId) : null
+    };
     await withFeedback(async () => {
       if (staffTab === 'receptionist') {
-        if (editingStaff) await api.updateReceptionist(editingStaff.id, staffForm);
-        else await api.createReceptionist(staffForm);
+        if (editingStaff) await api.updateReceptionist(editingStaff.id, payload);
+        else await api.createReceptionist(payload);
       } else {
-        if (editingStaff) await api.updateNurse(editingStaff.id, staffForm);
-        else await api.createNurse(staffForm);
+        if (editingStaff) await api.updateNurse(editingStaff.id, payload);
+        else await api.createNurse(payload);
       }
       setIsStaffDrawerOpen(false);
       setEditingStaff(null);
@@ -313,12 +501,13 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
   const openStaffEdit = (s: any) => {
     setEditingStaff(s);
     setStaffForm({ userName: s.userName, email: s.email, password: '', employeeCode: s.employeeCode,
-      phoneNumber: s.phoneNumber || '', department: s.department || '', status: s.status, isActive: s.isActive });
+      phoneNumber: s.phoneNumber || '', department: s.department || '', status: s.status, isActive: s.isActive,
+      doctorId: s.doctorId || '' });
     setIsStaffDrawerOpen(true);
   };
   const openStaffCreate = () => {
     setEditingStaff(null);
-    setStaffForm({ userName: '', email: '', password: '', employeeCode: '', phoneNumber: '', department: '', status: 'Active', isActive: true });
+    setStaffForm({ userName: '', email: '', password: '', employeeCode: '', phoneNumber: '', department: '', status: 'Active', isActive: true, doctorId: '' });
     setIsStaffDrawerOpen(true);
   };
 
@@ -409,14 +598,14 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
     ]});
     setIsRoleDrawerOpen(true);
   };
-  const togglePermission = (id: number) => setRoleForm(prev => ({
+  const togglePermission = (id: number) => setRoleForm((prev: any) => ({
     ...prev, permissionIds: prev.permissionIds.includes(id)
-      ? prev.permissionIds.filter(x => x !== id)
+      ? prev.permissionIds.filter((x: number) => x !== id)
       : [...prev.permissionIds, id]
   }));
-  const toggleWidget = (key: string) => setRoleForm(prev => ({
+  const toggleWidget = (key: string) => setRoleForm((prev: any) => ({
     ...prev, widgetKeys: prev.widgetKeys.includes(key)
-      ? prev.widgetKeys.filter(x => x !== key)
+      ? prev.widgetKeys.filter((x: string) => x !== key)
       : [...prev.widgetKeys, key]
   }));
 
@@ -464,7 +653,21 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', width: '100%' }}>
 
       {/* ── Top Navigation ── */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', borderBottom: '2px solid var(--border-color)', paddingBottom: '1rem' }}>
+      <div style={{
+        position: 'sticky',
+        top: 0,
+        backgroundColor: '#ffffff',
+        zIndex: 10,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: '0.75rem',
+        borderBottom: '2px solid var(--border-color)',
+        paddingBottom: '1.25rem',
+        paddingTop: '1.25rem',
+        marginTop: '-1.5rem',
+      }}>
         <div style={{ display: 'flex', gap: '0.25rem', overflowX: 'auto' }}>
           {NAV_TABS.filter(t => t.always).map(t => (
             <button
@@ -608,14 +811,45 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                       <tr key={d.id}>
                         <td><code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>{d.doctorCode}</code></td>
                         <td>
-                          <div style={{ fontWeight: 700 }}>Dr. {d.userName}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                            <span style={{ fontWeight: 700 }}>Dr. {d.userName}</span>
+                            {d.verificationStatus === 'Approved' ? (
+                              <span title="Verified Credentials" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#e1f5fe', color: '#0288d1', borderRadius: '3px', fontWeight: 600 }}>Verified ✓</span>
+                            ) : d.verificationStatus === 'Rejected' ? (
+                              <span title="Verification Rejected" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#ffebee', color: '#c62828', borderRadius: '3px', fontWeight: 600 }}>Rejected</span>
+                            ) : (
+                              <span title="Verification Pending" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#fff8e1', color: '#f57f17', borderRadius: '3px', fontWeight: 600 }}>Pending</span>
+                            )}
+                          </div>
+                          {d.fullLegalName && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                              Legal Name: <strong>{d.fullLegalName}</strong>
+                            </div>
+                          )}
                           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.email}</div>
+                          {d.registrationNumber && (
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                              Reg: <strong>{d.registrationNumber}</strong> ({d.medicalCouncil})
+                            </div>
+                          )}
+                          {d.customFields && Object.keys(d.customFields).length > 0 && (
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.25rem' }}>
+                              {Object.entries(d.customFields).map(([key, value]) => (
+                                <span key={key} style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '3px', color: 'var(--text-secondary)' }}>
+                                  <strong>{key}:</strong> {String(value)}
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </td>
                         <td><span className="badge badge-info">{d.specialization}</span></td>
                         <td style={{ fontSize: '0.85rem' }}>{d.qualification || '—'}</td>
                         <td style={{ fontSize: '0.85rem' }}>{d.experienceYears} yrs</td>
                         <td style={{ fontWeight: 700 }}>₹{Number(d.consultationFee).toLocaleString()}</td>
-                        <td style={{ fontSize: '0.85rem' }}>{d.phoneNumber || '—'}</td>
+                        <td style={{ fontSize: '0.85rem' }}>
+                          <div>Phone: {d.phoneNumber || '—'}</div>
+                          {d.mobileNumber && <div style={{ marginTop: '0.15rem' }}>Mobile: {d.mobileNumber}</div>}
+                        </td>
                         <td>{statusBadge(d.status)}</td>
                         {canRegisterDoctor && (
                           <td>
@@ -670,11 +904,11 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                 <div style={{ overflowX: 'auto' }}>
                   <table className="saas-table text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead>
-                      <tr><th>Code</th><th>Name</th><th>Email</th><th>Department</th><th>Phone</th><th>Status</th><th style={{ textAlign: 'center' }}>Actions</th></tr>
+                      <tr><th>Code</th><th>Name</th><th>Email</th><th>Department</th><th>Phone</th><th>Assigned Doctor</th><th>Status</th><th style={{ textAlign: 'center' }}>Actions</th></tr>
                     </thead>
                     <tbody>
                       {(staffTab === 'receptionist' ? receptionists : nurses).length === 0
-                        ? <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No records. Register one to get started.</td></tr>
+                        ? <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No records. Register one to get started.</td></tr>
                         : (staffTab === 'receptionist' ? receptionists : nurses).map((s: any) => (
                           <tr key={s.id}>
                             <td><code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>{s.employeeCode}</code></td>
@@ -682,6 +916,7 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                             <td style={{ fontSize: '0.85rem' }}>{s.email}</td>
                             <td style={{ fontSize: '0.85rem' }}>{s.department || '—'}</td>
                             <td style={{ fontSize: '0.85rem' }}>{s.phoneNumber || '—'}</td>
+                            <td style={{ fontSize: '0.85rem', fontWeight: 600, color: s.doctorName ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.doctorName ? `🩺 ${s.doctorName}` : 'All Doctors'}</td>
                             <td>{statusBadge(s.status)}</td>
                             <td>
                               <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
@@ -792,79 +1027,292 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
       {/* ════════════════════════════════════
           APPOINTMENTS
       ════════════════════════════════════ */}
-      {subView === 'appointments' && (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }} className="animate-fade-in">
-          {isAdmin && (
-            <div className="role-restriction-banner">
-              🔒 You have <strong>view-only access</strong> to appointments. Scheduling is performed by Doctors, Receptionists, or Nurses.
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-              <label style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Date:</label>
-              <input type="date" className="form-input" value={appFilterDate} onChange={e => setAppFilterDate(e.target.value)} style={{ maxWidth: '200px' }} />
-            </div>
-            {canBookAppointment && (
-              <button onClick={openAppCreate} className={`btn ${btnClass}`} style={{ borderRadius: 'var(--radius-sm)' }}>
-                📅 Schedule Appointment
-              </button>
-            )}
-          </div>
+      {subView === 'appointments' && (() => {
+        const year = calendarViewDate.getFullYear();
+        const month = calendarViewDate.getMonth();
+        const monthNames = [
+          'January', 'February', 'March', 'April', 'May', 'June',
+          'July', 'August', 'September', 'October', 'November', 'December'
+        ];
 
-          <div className="saas-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="saas-table text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Specialization</th><th>Type</th><th>Status</th>{canBookAppointment && <th style={{ textAlign: 'center' }}>Action</th>}</tr>
-                </thead>
-                <tbody>
-                  {appointments.length === 0
-                    ? <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No appointments on this date.</td></tr>
-                    : appointments.map((a: any) => {
-                        const timeStr = new Date(a.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                        return (
-                          <tr key={a.id}>
-                            <td style={{ fontWeight: 800 }}>⏰ {timeStr}</td>
-                            <td>
-                              <div style={{ fontWeight: 700 }}>{a.patientName}</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{a.patientCode}</div>
-                            </td>
-                            <td style={{ fontWeight: 600 }}>Dr. {a.doctorName}</td>
-                            <td><span className="badge badge-info">{a.specialization}</span></td>
-                            <td>
-                              <span className={`badge ${a.appointmentType === 'WalkIn' ? 'badge-warning' : 'badge-success'}`}>
-                                {a.appointmentType === 'WalkIn' ? '🚶 Walk-In' : '📋 Scheduled'}
-                              </span>
-                            </td>
-                            <td>
-                              {canBookAppointment ? (
-                                <select value={a.status} onChange={e => handleUpdateAppStatus(a.id, e.target.value)}
-                                  style={{ padding: '0.25rem 0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', background: 'var(--bg-secondary)' }}>
-                                  <option>Pending</option>
-                                  <option>Confirmed</option>
-                                  <option>Completed</option>
-                                  <option>Cancelled</option>
-                                </select>
-                              ) : statusBadge(a.status)}
-                            </td>
-                            {canBookAppointment && (
-                              <td style={{ textAlign: 'center' }}>
-                                <button disabled={a.status === 'Completed'} onClick={() => handleUpdateAppStatus(a.id, 'Completed')}
-                                  className="btn btn-secondary"
-                                  style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', color: 'var(--zoho-green)', borderRadius: 'var(--radius-sm)' }}>
-                                  ✓ Done
-                                </button>
-                              </td>
-                            )}
-                          </tr>
-                        );
-                      })}
-                </tbody>
-              </table>
+        // Generate 42 cells for 7x6 calendar grid
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const firstDay = new Date(year, month, 1).getDay();
+
+        const cells: Array<{ date: Date; isCurrentMonth: boolean }> = [];
+        // Prev month filler
+        const prevMonthYear = month === 0 ? year - 1 : year;
+        const prevMonth = month === 0 ? 11 : month - 1;
+        const daysInPrevMonth = new Date(prevMonthYear, prevMonth + 1, 0).getDate();
+        for (let i = firstDay - 1; i >= 0; i--) {
+          cells.push({
+            date: new Date(prevMonthYear, prevMonth, daysInPrevMonth - i),
+            isCurrentMonth: false,
+          });
+        }
+        // Current month days
+        for (let i = 1; i <= daysInMonth; i++) {
+          cells.push({
+            date: new Date(year, month, i),
+            isCurrentMonth: true,
+          });
+        }
+        // Next month filler
+        const nextMonthYear = month === 11 ? year + 1 : year;
+        const nextMonth = month === 11 ? 0 : month + 1;
+        const remaining = 42 - cells.length;
+        for (let i = 1; i <= remaining; i++) {
+          cells.push({
+            date: new Date(nextMonthYear, nextMonth, i),
+            isCurrentMonth: false,
+          });
+        }
+
+        const handlePrevMonth = () => {
+          setCalendarViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+        };
+        const handleNextMonth = () => {
+          setCalendarViewDate(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+        };
+        const handleTodayMonth = () => {
+          setCalendarViewDate(new Date());
+          setAppFilterDate(formatDateLocal(new Date()));
+        };
+
+        const activeDayApps = appointments.filter((a: any) => a.appointmentDate.startsWith(appFilterDate));
+
+        return (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }} className="animate-fade-in">
+            {/* Header section */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+              <div>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 850, margin: 0, color: 'var(--text-primary)' }}>Doctor Daily Schedule</h2>
+                <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>Track patient appointments, consults, and clinical schedules.</p>
+              </div>
+              {canBookAppointment && (
+                <button onClick={openAppCreate} className={`btn ${btnClass}`} style={{ borderRadius: 'var(--radius-sm)', padding: '0.5rem 1.25rem', height: 'fit-content' }}>
+                  📅 Schedule Appointment
+                </button>
+              )}
+            </div>
+
+            {/* Calendar Card container */}
+            <div className="saas-card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.25rem', backgroundColor: '#ffffff', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-md)' }}>
+              
+              {/* Navigation Controllers */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  {monthNames[month]} {year}
+                </span>
+                
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <button onClick={handlePrevMonth} className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.9rem', borderRadius: '4px' }}>
+                    &lt;
+                  </button>
+                  <button onClick={handleTodayMonth} className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.9rem', borderRadius: '4px', fontWeight: 600 }}>
+                    Today
+                  </button>
+                  <button onClick={handleNextMonth} className="btn btn-secondary" style={{ padding: '0.35rem 0.75rem', fontSize: '0.9rem', borderRadius: '4px' }}>
+                    &gt;
+                  </button>
+                </div>
+              </div>
+
+              {/* Weekdays Row */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.5rem', fontWeight: 700, fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
+                <div>SUN</div>
+                <div>MON</div>
+                <div>TUE</div>
+                <div>WED</div>
+                <div>THU</div>
+                <div>FRI</div>
+                <div>SAT</div>
+              </div>
+
+              {/* Monthly Days Grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '10px', marginTop: '0.5rem' }}>
+                {cells.map((cell, idx) => {
+                  const dateStr = formatDateLocal(cell.date);
+                  const isSelected = appFilterDate === dateStr;
+                  const isToday = formatDateLocal(new Date()) === dateStr;
+                  
+                  // Filter appointments for this date
+                  const dayApps = appointments.filter((a: any) => a.appointmentDate.startsWith(dateStr));
+                  const hasApps = dayApps.length > 0;
+                  
+                  // Styling depending on month and status
+                  let borderStyle = '1px solid var(--border-color)';
+                  let bgStyle = '#ffffff';
+                  let opacityStyle = '1';
+                  
+                  if (!cell.isCurrentMonth) {
+                    bgStyle = '#fafafa';
+                    borderStyle = '1px solid #f1f5f9';
+                    opacityStyle = '0.55';
+                  } else if (isSelected) {
+                    bgStyle = 'var(--zoho-blue-glow)';
+                    borderStyle = `2px solid ${themeColor}`;
+                  } else if (isToday) {
+                    bgStyle = '#ffffff';
+                    borderStyle = `1.5px dashed ${themeColor}`;
+                  } else if (hasApps) {
+                    bgStyle = '#f5f7ff';
+                    borderStyle = '1px solid #e0e7ff';
+                  }
+                  
+                  return (
+                    <div
+                      key={idx}
+                      onClick={() => setAppFilterDate(dateStr)}
+                      style={{
+                        border: borderStyle,
+                        borderRadius: '10px',
+                        padding: '0.5rem',
+                        backgroundColor: bgStyle,
+                        opacity: opacityStyle,
+                        cursor: 'pointer',
+                        transition: 'all 0.2s',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '0.35rem',
+                        height: '115px',
+                        position: 'relative',
+                        boxShadow: isSelected ? '0 4px 12px rgba(0,0,0,0.05)' : 'none',
+                        outline: 'none'
+                      }}
+                    >
+                      {/* Day Number */}
+                      <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center' }}>
+                        <span
+                          style={{
+                            width: '24px',
+                            height: '24px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: '50%',
+                            fontSize: '0.85rem',
+                            fontWeight: isSelected || isToday ? 700 : 500,
+                            backgroundColor: isSelected ? themeColor : 'transparent',
+                            color: isSelected ? '#ffffff' : isToday ? themeColor : cell.isCurrentMonth ? 'var(--text-primary)' : 'var(--text-muted)'
+                          }}
+                        >
+                          {cell.date.getDate()}
+                        </span>
+                      </div>
+
+                      {/* Day Appointments */}
+                      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem', overflow: 'hidden' }}>
+                        {dayApps.slice(0, 3).map((a: any) => {
+                          const tStr = new Date(a.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false });
+                          let statusBg = '#e3f2fd';
+                          let textColor = '#1565c0';
+                          if (a.status === 'Confirmed') { statusBg = '#e8f5e9'; textColor = '#2e7d32'; }
+                          else if (a.status === 'Cancelled') { statusBg = '#ffebee'; textColor = '#c62828'; }
+                          else if (a.status === 'Completed') { statusBg = '#eceff1'; textColor = '#455a64'; }
+                          
+                          return (
+                            <div
+                              key={a.id}
+                              title={`Dr. ${a.doctorName} - ${a.patientName} (${a.status})`}
+                              style={{
+                                fontSize: '0.65rem',
+                                padding: '0.15rem 0.3rem',
+                                backgroundColor: statusBg,
+                                color: textColor,
+                                borderRadius: '4px',
+                                whiteSpace: 'nowrap',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                fontWeight: 700
+                              }}
+                            >
+                              {tStr} - {a.patientName.split(' ')[0]}
+                            </div>
+                          );
+                        })}
+                        {dayApps.length > 3 && (
+                          <div style={{ fontSize: '0.6rem', color: 'var(--text-secondary)', fontWeight: 700, paddingLeft: '0.2rem' }}>
+                            + {dayApps.length - 3} more
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Daily Schedule List Details */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', marginTop: '0.5rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--text-primary)' }}>
+                  📅 Schedule Details: {new Date(appFilterDate).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                </span>
+              </div>
+              
+              {isAdmin && (
+                <div className="role-restriction-banner">
+                  🔒 You have <strong>view-only access</strong> to appointments. Scheduling is performed by Doctors, Receptionists, or Nurses.
+                </div>
+              )}
+
+              <div className="saas-card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ overflowX: 'auto' }}>
+                  <table className="saas-table text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Specialization</th><th>Type</th><th>Status</th>{canBookAppointment && <th style={{ textAlign: 'center' }}>Action</th>}</tr>
+                    </thead>
+                    <tbody>
+                      {activeDayApps.length === 0
+                        ? <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No appointments on this date.</td></tr>
+                        : activeDayApps.map((a: any) => {
+                            const timeStr = new Date(a.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                            return (
+                              <tr key={a.id}>
+                                <td style={{ fontWeight: 800 }}>⏰ {timeStr}</td>
+                                <td>
+                                  <div style={{ fontWeight: 700 }}>{a.patientName}</div>
+                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{a.patientCode}</div>
+                                </td>
+                                <td style={{ fontWeight: 600 }}>Dr. {a.doctorName}</td>
+                                <td><span className="badge badge-info">{a.specialization}</span></td>
+                                <td>
+                                  <span className={`badge ${a.appointmentType === 'WalkIn' ? 'badge-warning' : 'badge-success'}`}>
+                                    {a.appointmentType === 'WalkIn' ? '🚶 Walk-In' : '📋 Scheduled'}
+                                  </span>
+                                </td>
+                                <td>
+                                  {canBookAppointment ? (
+                                    <select value={a.status} onChange={e => handleUpdateAppStatus(a.id, e.target.value)}
+                                      style={{ padding: '0.25rem 0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', background: 'var(--bg-secondary)' }}>
+                                      <option>Pending</option>
+                                      <option>Confirmed</option>
+                                      <option>Completed</option>
+                                      <option>Cancelled</option>
+                                    </select>
+                                  ) : statusBadge(a.status)}
+                                </td>
+                                {canBookAppointment && (
+                                  <td style={{ textAlign: 'center' }}>
+                                    <button disabled={a.status === 'Completed'} onClick={() => handleUpdateAppStatus(a.id, 'Completed')}
+                                      className="btn btn-secondary"
+                                      style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', color: 'var(--zoho-green)', borderRadius: 'var(--radius-sm)' }}>
+                                      ✓ Done
+                                    </button>
+                                  </td>
+                                )}
+                              </tr>
+                            );
+                          })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* ════════════════════════════════════
           ROLES
@@ -943,18 +1391,31 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
             <div className="reg-form-section-label">Account Details</div>
             <div className="reg-form-grid-2">
               <div className="form-group">
-                <label className="form-label">Full Name <span style={{ color: themeColor }}>*</span></label>
-                <input type="text" className="form-input reg-modal-input" required value={docForm.userName} onChange={e => setDocForm({ ...docForm, userName: e.target.value })} placeholder="e.g. Dr. Rajesh Kumar" />
+                <label className="form-label">Account Username <span style={{ color: themeColor }}>*</span></label>
+                <input type="text" className="form-input reg-modal-input" required value={docForm.userName} onChange={e => setDocForm({ ...docForm, userName: e.target.value })} placeholder="e.g. rajeshkumar" />
               </div>
               <div className="form-group">
                 <label className="form-label">Email Address <span style={{ color: themeColor }}>*</span></label>
                 <input type="email" className="form-input reg-modal-input" required disabled={!!editingDoctor} value={docForm.email} onChange={e => setDocForm({ ...docForm, email: e.target.value })} placeholder="doctor@clinic.com" />
               </div>
+              <div className="form-group">
+                <label className="form-label">Full Legal Name <span style={{ color: themeColor }}>*</span></label>
+                <input type="text" className="form-input reg-modal-input" required value={docForm.fullLegalName} onChange={e => setDocForm({ ...docForm, fullLegalName: e.target.value })} placeholder="Dr. Rajesh Kumar (As in medical register)" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Mobile Number <span style={{ color: themeColor }}>*</span></label>
+                <input type="text" className="form-input reg-modal-input" required value={docForm.mobileNumber} onChange={e => setDocForm({ ...docForm, mobileNumber: e.target.value })} placeholder="+91 98765 43210 (For communication)" />
+              </div>
             </div>
             {!editingDoctor && (
-              <div className="form-group">
+              <div className="form-group" style={{ marginTop: '1rem' }}>
                 <label className="form-label">Temporary Password <span style={{ color: themeColor }}>*</span></label>
                 <input type="text" className="form-input reg-modal-input" required value={docForm.password} onChange={e => setDocForm({ ...docForm, password: e.target.value })} placeholder="Will be shared in welcome email" />
+                {docForm.password && !isPasswordStrong(docForm.password) && (
+                  <div style={{ color: 'var(--zoho-red)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    ⚠️ Must be ≥ 8 chars, with uppercase, lowercase, digit, and special char.
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -966,21 +1427,156 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                 <label className="form-label">Doctor Code <span style={{ color: themeColor }}>*</span></label>
                 <input type="text" className="form-input reg-modal-input" required value={docForm.doctorCode} onChange={e => setDocForm({ ...docForm, doctorCode: e.target.value })} placeholder="e.g. DOC001" />
               </div>
-              <div className="form-group">
+              
+              {/* Specialization Checkbox Dropdown */}
+              <div className="form-group" style={{ position: 'relative' }}>
                 <label className="form-label">Specialization <span style={{ color: themeColor }}>*</span></label>
-                <input type="text" className="form-input reg-modal-input" required value={docForm.specialization} onChange={e => setDocForm({ ...docForm, specialization: e.target.value })} placeholder="e.g. Cardiology" />
+                <button
+                  type="button"
+                  onClick={() => setIsSpecDropdownOpen(!isSpecDropdownOpen)}
+                  className="form-input reg-modal-input"
+                  style={{
+                    textAlign: 'left',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {docForm.specialization ? docForm.specialization : 'Select Specializations...'}
+                  </span>
+                  <span>{isSpecDropdownOpen ? '▲' : '▼'}</span>
+                </button>
+                {isSpecDropdownOpen && (
+                  <>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 998 }} onClick={() => setIsSpecDropdownOpen(false)} />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        zIndex: 999,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        padding: '0.5rem'
+                      }}
+                    >
+                      {defaultSpecializationsList.map(spec => {
+                        const currentSpecs = docForm.specialization ? docForm.specialization.split(',').map((x: string) => x.trim()).filter(Boolean) : [];
+                        const isChecked = currentSpecs.includes(spec);
+                        return (
+                          <label
+                            key={spec}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.25rem 0.5rem',
+                              cursor: 'pointer',
+                              borderRadius: '4px',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.85rem'
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleSpecCheckboxChange(spec)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            {spec}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
-              <div className="form-group">
+
+              {/* Qualification Checkbox Dropdown */}
+              <div className="form-group" style={{ position: 'relative' }}>
                 <label className="form-label">Qualification</label>
-                <input type="text" className="form-input reg-modal-input" value={docForm.qualification} onChange={e => setDocForm({ ...docForm, qualification: e.target.value })} placeholder="e.g. MBBS, MD" />
+                <button
+                  type="button"
+                  onClick={() => setIsQualDropdownOpen(!isQualDropdownOpen)}
+                  className="form-input reg-modal-input"
+                  style={{
+                    textAlign: 'left',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    background: 'var(--bg-secondary)',
+                    color: 'var(--text-primary)',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {docForm.qualification ? docForm.qualification : 'Select Qualifications...'}
+                  </span>
+                  <span>{isQualDropdownOpen ? '▲' : '▼'}</span>
+                </button>
+                {isQualDropdownOpen && (
+                  <>
+                    <div style={{ position: 'fixed', inset: 0, zIndex: 998 }} onClick={() => setIsQualDropdownOpen(false)} />
+                    <div
+                      style={{
+                        position: 'absolute',
+                        top: '100%',
+                        left: 0,
+                        right: 0,
+                        background: 'var(--bg-secondary)',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: 'var(--radius-sm)',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                        zIndex: 999,
+                        maxHeight: '200px',
+                        overflowY: 'auto',
+                        padding: '0.5rem'
+                      }}
+                    >
+                      {qualificationsList.map(qual => {
+                        const currentQuals = docForm.qualification ? docForm.qualification.split(',').map((x: string) => x.trim()).filter(Boolean) : [];
+                        const isChecked = currentQuals.includes(qual);
+                        return (
+                          <label
+                            key={qual}
+                            style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '0.5rem',
+                              padding: '0.25rem 0.5rem',
+                              cursor: 'pointer',
+                              borderRadius: '4px',
+                              color: 'var(--text-primary)',
+                              fontSize: '0.85rem'
+                            }}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isChecked}
+                              onChange={() => handleQualCheckboxChange(qual)}
+                              style={{ cursor: 'pointer' }}
+                            />
+                            {qual}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  </>
+                )}
               </div>
+
               <div className="form-group">
                 <label className="form-label">Experience (Years) <span style={{ color: themeColor }}>*</span></label>
                 <input type="number" className="form-input reg-modal-input" required min={0} value={docForm.experienceYears} onChange={e => setDocForm({ ...docForm, experienceYears: parseInt(e.target.value) || 0 })} />
-              </div>
-              <div className="form-group">
-                <label className="form-label">Consultation Fee (₹) <span style={{ color: themeColor }}>*</span></label>
-                <input type="number" className="form-input reg-modal-input" required min={0} step="0.01" value={docForm.consultationFee} onChange={e => setDocForm({ ...docForm, consultationFee: parseFloat(e.target.value) || 0 })} />
               </div>
               <div className="form-group">
                 <label className="form-label">Phone Number</label>
@@ -988,6 +1584,67 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
               </div>
             </div>
           </div>
+          <div className="reg-form-section">
+            <div className="reg-form-section-label">Medical Registry &amp; Verification Details</div>
+            <div className="reg-form-grid-2">
+              <div className="form-group">
+                <label className="form-label">Medical Registration Number <span style={{ color: themeColor }}>*</span></label>
+                <input type="text" className="form-input reg-modal-input" required value={docForm.registrationNumber} onChange={e => setDocForm({ ...docForm, registrationNumber: e.target.value })} placeholder="e.g. NMC/12345/REG" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Medical Council (Registration Authority) <span style={{ color: themeColor }}>*</span></label>
+                <select className="form-input reg-modal-input" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }} required value={docForm.medicalCouncil} onChange={e => setDocForm({ ...docForm, medicalCouncil: e.target.value })}>
+                  <option value="State Medical Council">State Medical Council</option>
+                  <option value="National Medical Commission">National Medical Commission (NMC)</option>
+                  <option value="Dental Council of India">Dental Council of India (DCI)</option>
+                  <option value="Indian Nursing Council">Indian Nursing Council (INC)</option>
+                  <option value="Rehabilitation Council of India">Rehabilitation Council of India (RCI)</option>
+                  <option value="Others">Others</option>
+                </select>
+              </div>
+              <div className="form-group">
+                <label className="form-label">Registration Certificate Evidence</label>
+                <input type="text" className="form-input reg-modal-input" value={docForm.registrationCertificate} onChange={e => setDocForm({ ...docForm, registrationCertificate: e.target.value })} placeholder="e.g. cert_rajesh.pdf or Ref ID" />
+              </div>
+              {editingDoctor && (
+                <div className="form-group">
+                  <label className="form-label">Credential Verification Status <span style={{ color: themeColor }}>*</span></label>
+                  <select className="form-input reg-modal-input" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }} required value={docForm.verificationStatus} onChange={e => setDocForm({ ...docForm, verificationStatus: e.target.value })}>
+                    <option value="Pending">🕒 Pending</option>
+                    <option value="Approved">💚 Approved (Verified)</option>
+                    <option value="Rejected">❤️ Rejected</option>
+                  </select>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {doctorFields.length > 0 && (
+            <div className="reg-form-section">
+              <div className="reg-form-section-label">Additional Information (Custom Fields)</div>
+              <div className="reg-form-grid-2">
+                {doctorFields.map((f: any) => (
+                  <div className="form-group" key={f.id}>
+                    <label className="form-label">
+                      {f.fieldName} {f.isRequired && <span style={{ color: themeColor }}>*</span>}
+                    </label>
+                    <input
+                      type={f.fieldType === 'Number' ? 'number' : f.fieldType === 'Date' ? 'date' : 'text'}
+                      className="form-input reg-modal-input"
+                      required={f.isRequired}
+                      value={docForm.customFields?.[f.fieldName] || ''}
+                      onChange={(e) => {
+                        const copy = { ...docForm.customFields };
+                        copy[f.fieldName] = e.target.value;
+                        setDocForm({ ...docForm, customFields: copy });
+                      }}
+                      placeholder={`Enter ${f.fieldName.toLowerCase()}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </form>
       </RegisterModal>
 
@@ -1020,14 +1677,19 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                 <input type="text" className="form-input reg-modal-input" required value={staffForm.userName} onChange={e => setStaffForm({ ...staffForm, userName: e.target.value })} placeholder="e.g. Priya Sharma" />
               </div>
               <div className="form-group">
-                <label className="form-label">Email Address <span style={{ color: themeColor }}>*</span></label>
-                <input type="email" className="form-input reg-modal-input" required disabled={!!editingStaff} value={staffForm.email} onChange={e => setStaffForm({ ...staffForm, email: e.target.value })} placeholder="staff@clinic.com" />
+                <label className="form-label">Email Address</label>
+                <input type="email" className="form-input reg-modal-input" disabled={!!editingStaff} value={staffForm.email || ''} onChange={e => setStaffForm({ ...staffForm, email: e.target.value })} placeholder="staff@clinic.com (Optional)" />
               </div>
             </div>
             {!editingStaff && (
-              <div className="form-group">
+              <div className="form-group" style={{ marginTop: '1rem' }}>
                 <label className="form-label">Temporary Password <span style={{ color: themeColor }}>*</span></label>
                 <input type="text" className="form-input reg-modal-input" required value={staffForm.password} onChange={e => setStaffForm({ ...staffForm, password: e.target.value })} placeholder="Will be shared in welcome email" />
+                {staffForm.password && !isPasswordStrong(staffForm.password) && (
+                  <div style={{ color: 'var(--zoho-red)', fontSize: '0.75rem', marginTop: '0.25rem' }}>
+                    ⚠️ Must be ≥ 8 chars, with uppercase, lowercase, digit, and special char.
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -1041,11 +1703,57 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
               </div>
               <div className="form-group">
                 <label className="form-label">Department</label>
-                <input type="text" className="form-input reg-modal-input" value={staffForm.department} onChange={e => setStaffForm({ ...staffForm, department: e.target.value })} placeholder="e.g. Outpatient" />
+                <select
+                  className="form-input reg-modal-input"
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  value={staffForm.department && !["Outpatient (OPD)", "Inpatient (IPD)", "Emergency & Trauma", "Pediatrics", "Cardiology", "Intensive Care (ICU)", "Billing & Admin"].includes(staffForm.department) ? "Others" : staffForm.department || ''}
+                  onChange={e => {
+                    const val = e.target.value;
+                    if (val === "Others") setStaffForm({ ...staffForm, department: "Custom Dept" });
+                    else setStaffForm({ ...staffForm, department: val });
+                  }}
+                >
+                  <option value="">Select Department...</option>
+                  <option value="Outpatient (OPD)">Outpatient (OPD)</option>
+                  <option value="Inpatient (IPD)">Inpatient (IPD)</option>
+                  <option value="Emergency & Trauma">Emergency &amp; Trauma</option>
+                  <option value="Pediatrics">Pediatrics</option>
+                  <option value="Cardiology">Cardiology</option>
+                  <option value="Intensive Care (ICU)">Intensive Care (ICU)</option>
+                  <option value="Billing & Admin">Billing &amp; Admin</option>
+                  <option value="Others">Others (Custom)</option>
+                </select>
+                {staffForm.department && !["Outpatient (OPD)", "Inpatient (IPD)", "Emergency & Trauma", "Pediatrics", "Cardiology", "Intensive Care (ICU)", "Billing & Admin"].includes(staffForm.department) && (
+                  <input
+                    type="text"
+                    className="form-input reg-modal-input"
+                    style={{ marginTop: '0.5rem' }}
+                    required
+                    value={staffForm.department === "Others" || staffForm.department === "Custom Dept" ? "" : staffForm.department}
+                    onChange={e => setStaffForm({ ...staffForm, department: e.target.value })}
+                    placeholder="Enter custom department name"
+                  />
+                )}
               </div>
               <div className="form-group">
                 <label className="form-label">Phone Number</label>
                 <input type="text" className="form-input reg-modal-input" value={staffForm.phoneNumber} onChange={e => setStaffForm({ ...staffForm, phoneNumber: e.target.value })} placeholder="+91 98765 43210" />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Assigned Doctor (Optional)</label>
+                <select
+                  className="form-input reg-modal-input"
+                  style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)', cursor: 'pointer' }}
+                  value={staffForm.doctorId || ''}
+                  onChange={e => setStaffForm({ ...staffForm, doctorId: e.target.value ? Number(e.target.value) : '' })}
+                >
+                  <option value="">None (All Doctors)</option>
+                  {doctors.map((d: any) => (
+                    <option key={d.id} value={d.id}>
+                      Dr. {d.userName} ({d.specialization})
+                    </option>
+                  ))}
+                </select>
               </div>
             </div>
           </div>
@@ -1221,7 +1929,11 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                 </select>
               </div>
             </div>
-            <div className="form-group">
+            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', display: 'flex', gap: '0.25rem', marginTop: '0.5rem', alignItems: 'center' }}>
+              <span>⚠️</span>
+              <span>Double-booking validation is active. Scheduling conflicts for the same doctor at the same time will be prevented.</span>
+            </div>
+            <div className="form-group" style={{ marginTop: '1rem' }}>
               <label className="form-label">Symptoms / Notes</label>
               <textarea className="form-input reg-modal-input" style={{ minHeight: '80px', resize: 'vertical' }} value={appForm.notes} onChange={e => setAppForm({ ...appForm, notes: e.target.value })} placeholder="Brief description of complaint or reason for visit..." />
             </div>

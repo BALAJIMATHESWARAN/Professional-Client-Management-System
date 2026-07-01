@@ -18,6 +18,8 @@ public class ReceptionistProfileRepository : IReceptionistProfileRepository
     {
         return await _context.ReceptionistProfiles
             .Include(r => r.User)
+            .Include(r => r.Doctor)
+            .ThenInclude(d => d!.User)
             .FirstOrDefaultAsync(r => r.Id == id);
     }
 
@@ -35,7 +37,11 @@ public class ReceptionistProfileRepository : IReceptionistProfileRepository
 
     public async Task<List<ReceptionistProfile>> GetAll()
     {
-        return await _context.ReceptionistProfiles.Include(r => r.User).ToListAsync();
+        return await _context.ReceptionistProfiles
+            .Include(r => r.User)
+            .Include(r => r.Doctor)
+            .ThenInclude(d => d!.User)
+            .ToListAsync();
     }
 
     public async Task<bool> EmployeeCodeExists(string employeeCode)

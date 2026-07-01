@@ -16,4 +16,7 @@ public class NurseProfile : BaseEntity, IMultiTenant
     
     // 1-to-1 Navigation back to User
     public User? User { get; set; }
+
+    public int? DoctorId { get; set; }
+    public virtual DoctorProfile? Doctor { get; set; }
 }

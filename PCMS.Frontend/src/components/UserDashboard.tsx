@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { api } from '../api';
 import type { AssignedModule, DynamicField, DynamicRecord } from '../api';
 import { CalendarWidget } from './CalendarWidget';
@@ -28,7 +28,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const [activeModule, setActiveModule] = useState<AssignedModule | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const isInitialMount = useRef(true);
 
   const zohoColors = [
     { color: 'var(--zoho-red)', glow: 'var(--zoho-red-glow)', borderClass: 'border-left-zoho-red', btnClass: 'btn-zoho-red' },
@@ -57,17 +56,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     localStorage.setItem('pcms_user_active_tab', activeTab);
   }, [activeTab]);
 
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    if (activeModule) {
-      localStorage.setItem('pcms_user_active_module_id', String(activeModule.moduleId));
-    } else {
-      localStorage.removeItem('pcms_user_active_module_id');
-    }
-  }, [activeModule]);
+
 
   // Audit Logs State (Tenant Admin only)
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -158,7 +147,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   }, []);
 
   // Module Workspace States
-  const [workspaceTab, setWorkspaceTab] = useState<'records' | 'fields'>('records');
+  const [workspaceTab, setWorkspaceTab] = useState<'records' | 'fields'>(() => {
+    return (localStorage.getItem('pcms_workspace_tab') as any) || 'records';
+  });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_workspace_tab', workspaceTab);
+  }, [workspaceTab]);
+
   const [fields, setFields] = useState<DynamicField[]>([]);
   const [records, setRecords] = useState<DynamicRecord[]>([]);
 
@@ -178,9 +174,34 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const [fieldError, setFieldError] = useState<string | null>(null);
 
   // Record Form States (Create / Edit)
-  const [editingRecord, setEditingRecord] = useState<DynamicRecord | null>(null);
-  const [isRecordFormOpen, setIsRecordFormOpen] = useState(false);
-  const [formFieldValues, setFormFieldValues] = useState<Record<number, string>>({});
+  const [editingRecord, setEditingRecord] = useState<DynamicRecord | null>(() => {
+    const val = localStorage.getItem('pcms_editing_record');
+    return val ? JSON.parse(val) : null;
+  });
+  const [isRecordFormOpen, setIsRecordFormOpen] = useState(() => {
+    return localStorage.getItem('pcms_record_form_open') === 'true';
+  });
+  const [formFieldValues, setFormFieldValues] = useState<Record<number, string>>(() => {
+    const val = localStorage.getItem('pcms_form_field_values');
+    return val ? JSON.parse(val) : {};
+  });
+
+  useEffect(() => {
+    if (editingRecord) {
+      localStorage.setItem('pcms_editing_record', JSON.stringify(editingRecord));
+    } else {
+      localStorage.removeItem('pcms_editing_record');
+    }
+  }, [editingRecord]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_record_form_open', String(isRecordFormOpen));
+  }, [isRecordFormOpen]);
+
+  useEffect(() => {
+    localStorage.setItem('pcms_form_field_values', JSON.stringify(formFieldValues));
+  }, [formFieldValues]);
+
   const [recordSuccess, setRecordSuccess] = useState<string | null>(null);
   const [recordError, setRecordError] = useState<string | null>(null);
 
@@ -319,7 +340,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       if (storedActiveModuleId) {
         const matchingModule = data.find(m => m.moduleId === Number(storedActiveModuleId));
         if (matchingModule) {
-          enterModuleWorkspace(matchingModule);
+          enterModuleWorkspace(matchingModule, true);
         }
       }
     } catch (err: any) {
@@ -344,21 +365,24 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     return () => window.removeEventListener('click', handler);
   }, []);
 
-  const enterModuleWorkspace = async (module: AssignedModule) => {
+  const enterModuleWorkspace = async (module: AssignedModule, isRestore: boolean = false) => {
     setActiveModule(module);
-    setActiveTab('modules');
-    setWorkspaceTab('records');
+    localStorage.setItem('pcms_user_active_module_id', String(module.moduleId));
+    if (!isRestore) {
+      setActiveTab('modules');
+      setWorkspaceTab('records');
+      setEditingField(null);
+      setEditingRecord(null);
+      setIsRecordFormOpen(false);
+
+      // Reset toolbar settings when routing to a new workspace tab
+      setRecordSearch('');
+      setRecordFilter('all');
+      setRecordSort('status');
+      setRecordView('table');
+    }
     setLoading(true);
     setError(null);
-    setEditingField(null);
-    setEditingRecord(null);
-    setIsRecordFormOpen(false);
-
-    // Reset toolbar settings when routing to a new workspace tab
-    setRecordSearch('');
-    setRecordFilter('all');
-    setRecordSort('status');
-    setRecordView('table');
 
     try {
       const fieldsData = await api.getFields(module.moduleId);
@@ -759,7 +783,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
         {/* Sidebar Tabs */}
         <div style={{ flex: 1, padding: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.45rem', overflowY: 'auto', overflowX: 'hidden' }}>
           <button
-            onClick={() => { setActiveModule(null); setActiveTab('modules'); }}
+            onClick={() => { setActiveModule(null); localStorage.removeItem('pcms_user_active_module_id'); setActiveTab('modules'); }}
             title="Feature Modules"
             style={{
               display: 'flex',
@@ -886,9 +910,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
             </>
           )}
 
-          {role === 'Admin' && (
+          {role === 'Admin' && !activeModule && (
             <button
-              onClick={() => { setActiveModule(null); setActiveTab('auditLogs'); }}
+              onClick={() => { setActiveModule(null); localStorage.removeItem('pcms_user_active_module_id'); setActiveTab('auditLogs'); }}
               title="Audit Logs"
               style={{
                 display: 'flex',
@@ -2344,7 +2368,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                 </div>
               ) : (
                 /* VIEW 2: MODULE WORKSPACE */
-                <div className="saas-card animate-fade-in" style={{ padding: '2.25rem', backgroundColor: '#ffffff' }}>
+                <div className="saas-card animate-fade-in" style={{ padding: '2.25rem', backgroundColor: '#ffffff', overflow: 'visible' }}>
                   {activeModule.moduleName.toLowerCase().includes('doctor') ? (
                     <DoctorModuleConsole
                       tenantId={tenantId}

@@ -76,6 +76,7 @@ export interface DynamicField {
   tenantId: number;
   fieldName: string;
   fieldType: string;
+  entityName?: string;
   isRequired: boolean;
   displayOrder: number;
   isActive: boolean;
@@ -206,9 +207,32 @@ export const api = {
   logout: () => {
     removeStoredToken();
     removeStoredUser();
-    localStorage.removeItem('pcms_user_active_tab');
-    localStorage.removeItem('pcms_user_active_module_id');
-    localStorage.removeItem('pcms_sa_active_tab');
+    const keys = [
+      'pcms_user_active_tab',
+      'pcms_user_active_module_id',
+      'pcms_sa_active_tab',
+      'pcms_workspace_tab',
+      'pcms_doctor_subview',
+      'pcms_editing_record',
+      'pcms_record_form_open',
+      'pcms_form_field_values',
+      'pcms_doctor_drawer_open',
+      'pcms_editing_doctor',
+      'pcms_doc_form',
+      'pcms_staff_tab',
+      'pcms_staff_drawer_open',
+      'pcms_editing_staff',
+      'pcms_staff_form',
+      'pcms_patient_drawer_open',
+      'pcms_editing_patient',
+      'pcms_patient_form',
+      'pcms_appointment_drawer_open',
+      'pcms_appointment_form',
+      'pcms_role_drawer_open',
+      'pcms_editing_role',
+      'pcms_role_form'
+    ];
+    keys.forEach(k => localStorage.removeItem(k));
   },
 
   forgotPassword: async (email: string): Promise<{ message: string }> => {
@@ -305,18 +329,21 @@ export const api = {
   },
 
   // Dynamic Fields
-  getFields: async (moduleId: number): Promise<DynamicField[]> => {
-    return request<DynamicField[]>(`/api/dynamic-field/module/${moduleId}`);
+  getFields: async (moduleId: number, entityName?: string): Promise<DynamicField[]> => {
+    const url = entityName 
+      ? `/api/dynamic-field/module/${moduleId}?entityName=${encodeURIComponent(entityName)}`
+      : `/api/dynamic-field/module/${moduleId}`;
+    return request<DynamicField[]>(url);
   },
 
-  createField: async (data: { moduleId: number; tenantId: number; fieldName: string; fieldType: string; isRequired: boolean; displayOrder: number }): Promise<DynamicField> => {
+  createField: async (data: { moduleId: number; tenantId: number; fieldName: string; fieldType: string; entityName?: string; isRequired: boolean; displayOrder: number }): Promise<DynamicField> => {
     return request<DynamicField>('/api/dynamic-field', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
-  updateField: async (id: number, data: { fieldName: string; fieldType: string; isRequired: boolean; displayOrder: number; isActive: boolean }): Promise<{ message: string }> => {
+  updateField: async (id: number, data: { fieldName: string; fieldType: string; entityName?: string; isRequired: boolean; displayOrder: number; isActive: boolean }): Promise<{ message: string }> => {
     return request<{ message: string }>(`/api/dynamic-field/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),

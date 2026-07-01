@@ -8,6 +8,7 @@ public class CreateFieldDto
     public int TenantId { get; set; }
     public required string FieldName { get; set; }
     public required string FieldType { get; set; }
+    public string? EntityName { get; set; }
     public bool IsRequired { get; set; }
     public int DisplayOrder { get; set; }
 }
@@ -16,6 +17,7 @@ public class UpdateFieldDto
 {
     public required string FieldName { get; set; }
     public required string FieldType { get; set; }
+    public string? EntityName { get; set; }
     public bool IsRequired { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
@@ -28,6 +30,7 @@ public class DynamicFieldDto
     public int TenantId { get; set; }
     public required string FieldName { get; set; }
     public required string FieldType { get; set; }
+    public string? EntityName { get; set; }
     public bool IsRequired { get; set; }
     public int DisplayOrder { get; set; }
     public bool IsActive { get; set; }
@@ -59,7 +62,7 @@ public class DynamicRecordDto
 public interface IDynamicFormService
 {
     // Fields configuration
-    Task<List<DynamicFieldDto>> GetFields(int tenantId, int moduleId);
+    Task<List<DynamicFieldDto>> GetFields(int tenantId, int moduleId, string? entityName = null);
     Task<DynamicFieldDto?> GetFieldById(int id);
     Task<DynamicFieldDto> CreateField(CreateFieldDto dto, int currentUserId);
     Task UpdateField(int id, UpdateFieldDto dto, int currentUserId);

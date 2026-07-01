@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using PCMS.Infrastructure.Data;
@@ -11,9 +12,11 @@ using PCMS.Infrastructure.Data;
 namespace PCMS.Infrastructure.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260701091218_EnhanceDoctorModule")]
+    partial class EnhanceDoctorModule
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -205,27 +208,11 @@ namespace PCMS.Infrastructure.Migrations
                     b.Property<int?>("DynamicRecordId")
                         .HasColumnType("integer");
 
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<int>("ExperienceYears")
                         .HasColumnType("integer");
 
-                    b.Property<string>("FullLegalName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
-
-                    b.Property<string>("MedicalCouncil")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("MobileNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.Property<DateTime?>("ModifiedAt")
                         .HasColumnType("timestamp with time zone");
@@ -239,13 +226,6 @@ namespace PCMS.Infrastructure.Migrations
                     b.Property<string>("Qualification")
                         .HasColumnType("text");
 
-                    b.Property<string>("RegistrationCertificate")
-                        .HasColumnType("text");
-
-                    b.Property<string>("RegistrationNumber")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("Specialization")
                         .IsRequired()
                         .HasColumnType("text");
@@ -256,10 +236,6 @@ namespace PCMS.Infrastructure.Migrations
 
                     b.Property<int>("TenantId")
                         .HasColumnType("integer");
-
-                    b.Property<string>("VerificationStatus")
-                        .IsRequired()
-                        .HasColumnType("text");
 
                     b.HasKey("Id");
 

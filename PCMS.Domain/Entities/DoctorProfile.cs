@@ -20,6 +20,17 @@ public class DoctorProfile : BaseEntity, IMultiTenant
     
     public required string Status { get; set; }
     
+    public required string FullLegalName { get; set; }
+    public required string MobileNumber { get; set; }
+    public required string Email { get; set; }
+    public required string RegistrationNumber { get; set; }
+    public required string MedicalCouncil { get; set; }
+    public string? RegistrationCertificate { get; set; }
+    public required string VerificationStatus { get; set; } // Default: Pending
+
     // 1-to-1 Navigation back to User
     public User? User { get; set; }
+
+    public int? DynamicRecordId { get; set; }
+    public virtual DynamicRecord? DynamicRecord { get; set; }
 }

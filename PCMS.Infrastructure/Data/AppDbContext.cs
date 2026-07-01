@@ -57,6 +57,11 @@ public class AppDbContext : DbContext
             .WithOne(u => u.ReceptionistProfile)
             .HasForeignKey<ReceptionistProfile>(r => r.Id)
             .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<ReceptionistProfile>()
+            .HasOne(r => r.Doctor)
+            .WithMany()
+            .HasForeignKey(r => r.DoctorId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // NurseProfile 1-to-1 with User
         modelBuilder.Entity<NurseProfile>()
@@ -66,6 +71,11 @@ public class AppDbContext : DbContext
             .WithOne(u => u.NurseProfile)
             .HasForeignKey<NurseProfile>(n => n.Id)
             .OnDelete(DeleteBehavior.Cascade);
+        modelBuilder.Entity<NurseProfile>()
+            .HasOne(n => n.Doctor)
+            .WithMany()
+            .HasForeignKey(n => n.DoctorId)
+            .OnDelete(DeleteBehavior.Restrict);
 
         // Index configurations for scalability (1M+ records)
         modelBuilder.Entity<Patient>()

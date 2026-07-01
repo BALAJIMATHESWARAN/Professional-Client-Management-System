@@ -16,26 +16,33 @@ public class ReceptionistService : IReceptionistService
     private readonly IUserTenantRepository _userTenantRepository;
     private readonly IPasswordService _passwordService;
     private readonly ICurrentUserService _currentUserService;
+    private readonly IDoctorProfileRepository _doctorRepository;
 
     public ReceptionistService(
         IUserRepository userRepository,
         IReceptionistProfileRepository receptionistRepository,
         IUserTenantRepository userTenantRepository,
         IPasswordService passwordService,
-        ICurrentUserService currentUserService)
+        ICurrentUserService currentUserService,
+        IDoctorProfileRepository doctorRepository)
     {
         _userRepository = userRepository;
         _receptionistRepository = receptionistRepository;
         _userTenantRepository = userTenantRepository;
         _passwordService = passwordService;
         _currentUserService = currentUserService;
+        _doctorRepository = doctorRepository;
     }
 
     public async Task<ReceptionistResponse> CreateReceptionist(CreateReceptionistRequest request)
     {
         var tenantId = _currentUserService.TenantId ?? throw new BadRequestException("Tenant ID context is required");
 
-        if (await _userRepository.EmailExists(request.Email))
+        var email = string.IsNullOrWhiteSpace(request.Email)
+            ? $"{request.UserName.Replace(" ", "").ToLower()}@pcms.local"
+            : request.Email;
+
+        if (await _userRepository.EmailExists(email))
         {
             throw new BadRequestException("Email already exists");
         }
@@ -45,11 +52,16 @@ public class ReceptionistService : IReceptionistService
             throw new BadRequestException("Employee code already exists");
         }
 
+        if (!_passwordService.IsStrongPassword(request.Password))
+        {
+            throw new BadRequestException("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character/symbol.");
+        }
+
         // 1. Create User
         var user = new User
         {
             UserName = request.UserName,
-            Email = request.Email,
+            Email = email,
             PasswordHash = _passwordService.Hash(request.Password),
             IsActive = true,
             IsSuperAdmin = false,
@@ -69,6 +81,11 @@ public class ReceptionistService : IReceptionistService
 
         await _userTenantRepository.Add(userTenant);
 
+        if (request.DoctorId.HasValue && await _doctorRepository.GetById(request.DoctorId.Value) == null)
+        {
+            throw new BadRequestException("Assigned Doctor not found");
+        }
+
         // 3. Create Profile
         var receptionistProfile = new ReceptionistProfile
         {
@@ -77,12 +94,15 @@ public class ReceptionistService : IReceptionistService
             EmployeeCode = request.EmployeeCode,
             PhoneNumber = request.PhoneNumber,
             Department = request.Department,
-            Status = "Active"
+            Status = "Active",
+            DoctorId = request.DoctorId
         };
 
         await _receptionistRepository.Add(receptionistProfile);
 
-        return MapToResponse(user, receptionistProfile);
+        // Fetch receptionist with includes to return mapped doctor name
+        var savedProfile = await _receptionistRepository.GetById(receptionistProfile.Id);
+        return MapToResponse(user, savedProfile ?? receptionistProfile);
     }
 
     public async Task<ReceptionistResponse> UpdateReceptionist(int id, UpdateReceptionistRequest request)
@@ -90,17 +110,24 @@ public class ReceptionistService : IReceptionistService
         var receptionist = await _receptionistRepository.GetById(id) ?? throw new NotFoundException("Receptionist not found");
         var user = await _userRepository.GetById(id) ?? throw new NotFoundException("User not found");
 
+        if (request.DoctorId.HasValue && await _doctorRepository.GetById(request.DoctorId.Value) == null)
+        {
+            throw new BadRequestException("Assigned Doctor not found");
+        }
+
         receptionist.EmployeeCode = request.EmployeeCode;
         receptionist.PhoneNumber = request.PhoneNumber;
         receptionist.Department = request.Department;
         receptionist.Status = request.Status;
+        receptionist.DoctorId = request.DoctorId;
 
         user.IsActive = request.IsActive;
 
         await _receptionistRepository.Update(receptionist);
         await _userRepository.Update(user);
 
-        return MapToResponse(user, receptionist);
+        var updatedProfile = await _receptionistRepository.GetById(receptionist.Id);
+        return MapToResponse(user, updatedProfile ?? receptionist);
     }
 
     public async Task<ReceptionistResponse> GetReceptionistById(int id)
@@ -140,7 +167,9 @@ public class ReceptionistService : IReceptionistService
             PhoneNumber = receptionist.PhoneNumber,
             Department = receptionist.Department,
             Status = receptionist.Status,
-            IsActive = user.IsActive
+            IsActive = user.IsActive,
+            DoctorId = receptionist.DoctorId,
+            DoctorName = receptionist.Doctor?.User?.UserName
         };
     }
 }
