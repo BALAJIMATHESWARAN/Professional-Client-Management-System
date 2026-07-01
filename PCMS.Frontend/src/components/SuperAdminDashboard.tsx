@@ -17,7 +17,9 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   userName,
   onLogout,
 }) => {
-  const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    return (localStorage.getItem('pcms_sa_active_tab') as TabType) || 'dashboard';
+  });
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [admins, setAdmins] = useState<AdminUser[]>([]);
   const [systemModules, setSystemModules] = useState<SystemModule[]>([]);
@@ -28,6 +30,10 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('pcms_sa_sidebar_collapsed') === 'true';
   });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_sa_active_tab', activeTab);
+  }, [activeTab]);
 
   // Settings State Flags
   const [darkMode, setDarkMode] = useState(() => {

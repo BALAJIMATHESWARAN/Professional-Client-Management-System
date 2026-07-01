@@ -18,6 +18,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
 
   // Dynamic Password Checks
   const isLengthValid = password.length >= 8;
@@ -351,6 +352,8 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
                     style={{ width: '100%', paddingRight: '2.75rem' }}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
+                    onFocus={() => setIsPasswordFocused(true)}
+                    onBlur={() => setIsPasswordFocused(false)}
                     required
                     disabled={submitting}
                   />
@@ -372,18 +375,25 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
                     )}
                   </button>
                 </div>
-                {password && (
+                {isPasswordFocused && (
                   <div style={{
+                    position: 'absolute',
+                    top: '100%',
+                    left: 0,
+                    right: 0,
+                    zIndex: 100,
                     fontSize: '0.78rem',
                     color: '#94a3b8',
                     padding: '0.6rem 0.75rem',
-                    background: 'rgba(255, 255, 255, 0.05)',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '6px',
+                    background: 'rgba(23, 23, 37, 0.98)',
+                    backdropFilter: 'blur(12px)',
+                    border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                    borderRadius: '8px',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '0.35rem',
-                    marginTop: '0.45rem'
+                    marginTop: '0.45rem',
+                    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6)'
                   }}>
                     <div style={{ fontWeight: 600, color: '#ffffff', marginBottom: '0.15rem' }}>Password Requirements:</div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isLengthValid ? '#10b981' : '#64748b' }}>

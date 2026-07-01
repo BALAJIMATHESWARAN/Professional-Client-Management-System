@@ -5,6 +5,8 @@ using PCMS.Domain.Entities;
 using PCMS.Application.DTOs.Auth;
 using PCMS.Application.DTOs.AuditLog;
 using PCMS.Application.Exceptions;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -103,8 +105,10 @@ public class AuthServiceTests
         var jwtService = new FakeJwtService();
         var emailService = new FakeEmailService();
         var auditLogService = new FakeAuditLogService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var configuration = new ConfigurationBuilder().Build();
 
-        var authService = new AuthService(userRepo, userTenantRepo, passwordService, jwtService, emailService, auditLogService);
+        var authService = new AuthService(userRepo, userTenantRepo, passwordService, jwtService, emailService, auditLogService, memoryCache, configuration);
 
         var request = new LoginRequestDto { Email = "test@example.com", Password = "StrongPassword123!" };
 
@@ -138,8 +142,10 @@ public class AuthServiceTests
         var jwtService = new FakeJwtService();
         var emailService = new FakeEmailService();
         var auditLogService = new FakeAuditLogService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var configuration = new ConfigurationBuilder().Build();
 
-        var authService = new AuthService(userRepo, userTenantRepo, passwordService, jwtService, emailService, auditLogService);
+        var authService = new AuthService(userRepo, userTenantRepo, passwordService, jwtService, emailService, auditLogService, memoryCache, configuration);
 
         var request = new LoginRequestDto { Email = "test@example.com", Password = "weak" };
 
@@ -176,8 +182,10 @@ public class AuthServiceTests
         var jwtService = new FakeJwtService();
         var emailService = new FakeEmailService();
         var auditLogService = new FakeAuditLogService();
+        var memoryCache = new MemoryCache(new MemoryCacheOptions());
+        var configuration = new ConfigurationBuilder().Build();
 
-        var authService = new AuthService(userRepo, userTenantRepo, passwordService, jwtService, emailService, auditLogService);
+        var authService = new AuthService(userRepo, userTenantRepo, passwordService, jwtService, emailService, auditLogService, memoryCache, configuration);
 
         var request = new LoginRequestDto { Email = "test@example.com", Password = "IncorrectPassword" };
 

@@ -1,6 +1,9 @@
 using PCMS.Application.DTOs.Auth;
 using PCMS.Application.Exceptions;
 using PCMS.Application.Interfaces;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Caching.Memory;
+using System.Security.Cryptography;
 
 namespace PCMS.Application.Services;
 
@@ -12,6 +15,8 @@ public class AuthService : IAuthService
     private readonly IJwtService _jwtService;
     private readonly IEmailService _emailService;
     private readonly IAuditLogService _auditLogService;
+    private readonly IConfiguration _configuration;
+private readonly IMemoryCache _memoryCache;
 
     public AuthService(
         IUserRepository userRepository,
@@ -19,7 +24,9 @@ public class AuthService : IAuthService
         IPasswordService passwordService,
         IJwtService jwtService,
         IEmailService emailService,
-        IAuditLogService auditLogService)
+        IAuditLogService auditLogService,
+    IMemoryCache memoryCache,
+        IConfiguration configuration)
     {
         _userRepository = userRepository;
         _userTenantRepository = userTenantRepository;
@@ -27,6 +34,8 @@ public class AuthService : IAuthService
         _jwtService = jwtService;
         _emailService = emailService;
         _auditLogService = auditLogService;
+        _configuration = configuration;
+_memoryCache = memoryCache;
     }
 
     public async Task<LoginResponseDto> Login(LoginRequestDto request)
@@ -138,33 +147,44 @@ public class AuthService : IAuthService
             throw new BadRequestException("Your account is deactivated. Reset is not allowed.");
         }
 
-        // Generate secure 64-character token
+        // Password reset email limit check (max 3 per day per account)
+        var emailKey = user.Email?.Trim().ToLowerInvariant() ?? "";
+        var cacheKey = $"PasswordReset_{emailKey}";
+        var resetCount = _memoryCache.Get<int>(cacheKey);
+        if (resetCount >= 3)
+        {
+            throw new BadRequestException("You have exceeded the daily limit of password reset emails. Please try again tomorrow.");
+        }
+        // Increment count and set expiration to midnight (next day)
+        var expiration = DateTimeOffset.UtcNow.AddDays(1).Date; // midnight UTC next day
+        _memoryCache.Set(cacheKey, resetCount + 1, expiration);
+
+        // Generate 6‑digit numeric OTP (valid for 24 hours)
+        var otp = RandomNumberGenerator.GetInt32(100000, 999999).ToString();
+        user.PasswordResetOtp = otp;
+        user.PasswordResetOtpExpiry = DateTime.UtcNow.AddHours(24);
+        // Clear any existing token fields (optional)
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiry = null;
         var token = Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
         user.PasswordResetToken = token;
         user.PasswordResetTokenExpiry = DateTime.UtcNow.AddHours(2);
 
         await _userRepository.Update(user);
 
-        // Generate reset link
-        var resetLink = $"http://localhost:5173/reset-password?token={token}&email={Uri.EscapeDataString(user.Email)}";
-
-        // Build HTML body
-        var subject = "PCMS Portal - Reset Password Instructions";
+                // Build OTP email body
+        var subject = "PCMS Portal - Password Reset OTP";
         var body = $@"
             <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;'>
                 <h2 style='color: #6366f1; text-align: center;'>PCMS Platform Support</h2>
-                <hr style='border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;'/>
+                <hr style='border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;' />
                 <p>Hello <strong>{user.UserName}</strong>,</p>
-                <p>We received a request to reset your PCMS user account password. Please click the button below to complete the reset process:</p>
-                <div style='text-align: center; margin: 30px 0;'>
-                    <a href='{resetLink}' style='background: linear-gradient(135deg, #6366f1, #8b5cf6); color: #ffffff; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;'>Reset My Password</a>
-                </div>
-                <p style='color: #64748b; font-size: 0.85rem;'>If the button doesn't work, copy and paste the link below into your web browser:</p>
-                <p style='background: #f1f5f9; padding: 10px; border-radius: 4px; font-size: 0.8rem; word-break: break-all; color: #475569;'>{resetLink}</p>
-                <p style='color: #ef4444; font-size: 0.8rem; font-weight: bold;'>Please note: This link will expire in 2 hours for security reasons.</p>
-                <hr style='border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;'/>
+                <p>Your password reset code is <strong>{otp}</strong>. It is valid for 24 hours.</p>
+                <p>If you did not request a password reset, you can ignore this email.</p>
+                <hr style='border: none; border-top: 1px solid #f1f5f9; margin: 20px 0;' />
                 <p style='font-size: 0.8rem; color: #94a3b8; text-align: center;'>This is an automated email, please do not reply directly.</p>
             </div>";
+// Removed legacy reset link email generation; OTP email is sent above.
 
         await _emailService.SendEmailAsync(user.Email, subject, body);
         await _auditLogService.LogAsync("FORGOT_PASSWORD", "User", user.Id.ToString(), $"Password reset instructions sent to {user.Email}", user.Id, user.Email);
@@ -205,6 +225,77 @@ public class AuthService : IAuthService
         await _auditLogService.LogAsync("RESET_PASSWORD", "User", user.Id.ToString(), "Password reset successfully", user.Id, user.Email);
     }
 
+    // Standalone verification of OTP code
+    public async Task<bool> VerifyOtp(VerifyOtpRequestDto request)
+    {
+        var user = await _userRepository.GetByEmail(request.Email);
+        if (user == null)
+        {
+            throw new NotFoundException("We couldn't find an account matching that email address.");
+        }
+
+        if (!user.IsActive)
+        {
+            throw new BadRequestException("Your account is deactivated.");
+        }
+
+        if (string.IsNullOrWhiteSpace(user.PasswordResetOtp) || user.PasswordResetOtpExpiry == null || user.PasswordResetOtpExpiry < DateTime.UtcNow)
+        {
+            throw new BadRequestException("The OTP has expired or is invalid. Please request a new code.");
+        }
+
+        if (!string.Equals(user.PasswordResetOtp, request.Otp, StringComparison.Ordinal))
+        {
+            throw new BadRequestException("Invalid OTP code. Please check and try again.");
+        }
+
+        return true;
+    }
+
+    // New method: Verify OTP and reset password
+    public async Task VerifyOtpAndResetPassword(VerifyOtpResetPasswordRequestDto request)
+    {
+        // Find user by email
+        var user = await _userRepository.GetByEmail(request.Email);
+        if (user == null)
+        {
+            throw new NotFoundException("We couldn't find an account matching that email address.");
+        }
+
+        if (!user.IsActive)
+        {
+            throw new BadRequestException("Your account is deactivated. Reset is not allowed.");
+        }
+
+        // Validate OTP existence and expiry
+        if (string.IsNullOrWhiteSpace(user.PasswordResetOtp) || user.PasswordResetOtpExpiry == null || user.PasswordResetOtpExpiry < DateTime.UtcNow)
+        {
+            throw new BadRequestException("The OTP is invalid or has expired. Please request a new password reset.");
+        }
+
+        // Verify OTP matches
+        if (!string.Equals(user.PasswordResetOtp, request.Otp, StringComparison.Ordinal))
+        {
+            throw new BadRequestException("Invalid OTP provided.");
+        }
+
+        // Validate new password strength
+        if (!_passwordService.IsStrongPassword(request.NewPassword))
+        {
+            throw new BadRequestException("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character.");
+        }
+
+        // Update password and clear OTP/token fields
+        user.PasswordHash = _passwordService.Hash(request.NewPassword);
+        user.PasswordResetOtp = null;
+        user.PasswordResetOtpExpiry = null;
+        user.PasswordResetToken = null;
+        user.PasswordResetTokenExpiry = null;
+
+        await _userRepository.Update(user);
+        await _auditLogService.LogAsync("RESET_PASSWORD_OTP", "User", user.Id.ToString(), "Password reset via OTP", user.Id, user.Email);
+    }
+
     public async Task ChangePassword(ChangePasswordRequestDto request, int userId)
     {
         var user = await _userRepository.GetById(userId);
@@ -220,11 +311,12 @@ public class AuthService : IAuthService
 
         if (!_passwordService.IsStrongPassword(request.NewPassword))
         {
-            throw new BadRequestException("New password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one digit, and one special character/symbol.");
+            throw new BadRequestException("Password does not meet complexity requirements.");
         }
 
+        // Hash and save new password
         user.PasswordHash = _passwordService.Hash(request.NewPassword);
         await _userRepository.Update(user);
-        await _auditLogService.LogAsync("CHANGE_PASSWORD", "User", user.Id.ToString(), "User changed password successfully", user.Id, user.Email);
+        await _auditLogService.LogAsync("CHANGE_PASSWORD", "User", user.Id.ToString(), "Password changed successfully", user.Id, user.Email);
     }
 }

@@ -6,7 +6,9 @@ public interface IAuthService
 {
     Task<LoginResponseDto> Login(LoginRequestDto request);
     Task<TokenResponseDto> SelectTenant(SelectTenantRequestDto request);
+    Task VerifyOtpAndResetPassword(VerifyOtpResetPasswordRequestDto request);
     Task ForgotPassword(ForgotPasswordRequestDto request);
+    Task<bool> VerifyOtp(VerifyOtpRequestDto request);
     Task ResetPassword(ResetPasswordRequestDto request);
     Task ChangePassword(ChangePasswordRequestDto request, int userId);
 }

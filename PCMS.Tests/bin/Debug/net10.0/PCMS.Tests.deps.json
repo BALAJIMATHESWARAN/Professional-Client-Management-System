@@ -565,6 +565,8 @@
       },
       "PCMS.Application/1.0.0": {
         "dependencies": {
+          "Microsoft.Extensions.Caching.Memory": "10.0.9",
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.9",
           "PCMS.Domain": "1.0.0"
         },
         "runtime": {

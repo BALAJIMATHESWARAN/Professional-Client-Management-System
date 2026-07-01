@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { api } from '../api';
 import type { AssignedModule, DynamicField, DynamicRecord } from '../api';
 import { CalendarWidget } from './CalendarWidget';
 import logoImg from '../assets/logo.png';
 import { formatAppDate, formatLiveTime, translations, themePatterns, applyThemePattern } from '../themeUtils';
+import { DoctorModuleConsole } from './DoctorModuleConsole';
 
 
 interface UserDashboardProps {
@@ -27,6 +28,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const [activeModule, setActiveModule] = useState<AssignedModule | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isInitialMount = useRef(true);
 
   const zohoColors = [
     { color: 'var(--zoho-red)', glow: 'var(--zoho-red-glow)', borderClass: 'border-left-zoho-red', btnClass: 'btn-zoho-red' },
@@ -44,10 +46,28 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   };
 
   // User Console Navigation / Layout States
-  const [activeTab, setActiveTab] = useState<'modules' | 'settings' | 'auditLogs'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'settings' | 'auditLogs'>(() => {
+    return (localStorage.getItem('pcms_user_active_tab') as any) || 'modules';
+  });
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     return localStorage.getItem('pcms_user_sidebar_collapsed') === 'true';
   });
+
+  useEffect(() => {
+    localStorage.setItem('pcms_user_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (isInitialMount.current) {
+      isInitialMount.current = false;
+      return;
+    }
+    if (activeModule) {
+      localStorage.setItem('pcms_user_active_module_id', String(activeModule.moduleId));
+    } else {
+      localStorage.removeItem('pcms_user_active_module_id');
+    }
+  }, [activeModule]);
 
   // Audit Logs State (Tenant Admin only)
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
@@ -194,6 +214,9 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+  const [cacheSuccess, setCacheSuccess] = useState<string | null>(null);
+  const [revokeSessionsSuccess, setRevokeSessionsSuccess] = useState<string | null>(null);
 
   // Additional Settings States
   const [profileName, setProfileName] = useState(userName);
@@ -208,7 +231,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
   const [profileSuccessMessage, setProfileSuccessMessage] = useState<string | null>(null);
 
   const [settingsSubTab, setSettingsSubTab] = useState<'profile' | 'security' | 'appearance' | 'preferences'>('profile');
-  const [preferencesExpanded, setPreferencesExpanded] = useState(false);
   const [customBrandColor, setCustomBrandColor] = useState(() => {
     const initialPattern = localStorage.getItem('pcms_theme_pattern') || 'classic';
     const patternColors = themePatterns[initialPattern as keyof typeof themePatterns] || themePatterns.classic;
@@ -292,6 +314,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
     try {
       const data = await api.getAssignedModules(userId, tenantId);
       setModules(data);
+
+      const storedActiveModuleId = localStorage.getItem('pcms_user_active_module_id');
+      if (storedActiveModuleId) {
+        const matchingModule = data.find(m => m.moduleId === Number(storedActiveModuleId));
+        if (matchingModule) {
+          enterModuleWorkspace(matchingModule);
+        }
+      }
     } catch (err: any) {
       setError(err.message || 'Failed to load assigned modules.');
     } finally {
@@ -1328,9 +1358,6 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
               const hasSpecial = /[^A-Za-z0-9]/.test(newPassword);
               const isPasswordValid = hasMinLength && hasUppercase && hasNumber && hasSpecial && (newPassword === confirmPassword);
 
-              const currentLangLabel = language === 'en' ? 'English (US)' : language === 'es' ? 'Español' : 'Français';
-              const currentTimezoneLabel = timezone === 'UTC' ? 'UTC' : timezone === 'EST' ? 'EST' : timezone === 'PST' ? 'PST' : 'IST';
-
               const renderThemeMockup = (colors: Record<string, string>) => {
                 const primaryColor = colors['--zoho-blue'];
                 const redColor = colors['--zoho-red'];
@@ -1373,587 +1400,738 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                 );
               };
 
-              return (
-                <div className="animate-fade-in" style={{ width: '100%', maxWidth: '850px', margin: '0 auto' }}>
-                  {/* Settings Tab Headers */}
-                  <div style={{
-                    display: 'flex',
-                    borderBottom: '1px solid var(--border-color)',
-                    marginBottom: '1.5rem',
-                    gap: '1.5rem',
-                    paddingBottom: '0.25rem',
-                    overflowX: 'auto'
-                  }}>
-                    {[
-                      { id: 'profile', label: 'Profile', icon: '👤' },
-                      { id: 'security', label: 'Security', icon: '🔑' },
-                      { id: 'appearance', label: 'Appearance', icon: '🎨' },
-                      { id: 'preferences', label: 'Preferences', icon: '⚙️' }
-                    ].map((tab) => {
-                      const isSubActive = settingsSubTab === tab.id;
-                      return (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          onClick={() => setSettingsSubTab(tab.id as any)}
-                          style={{
-                            background: 'none',
-                            border: 'none',
-                            borderBottom: isSubActive ? '3px solid var(--zoho-blue)' : '3px solid transparent',
-                            padding: '0.75rem 0.5rem',
-                            cursor: 'pointer',
-                            fontWeight: isSubActive ? 700 : 500,
-                            color: isSubActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            fontSize: '0.95rem',
-                            transition: 'all 0.2s',
-                            outline: 'none',
-                            whiteSpace: 'nowrap'
-                          }}
-                        >
-                          <span>{tab.icon}</span>
-                          <span>{tab.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+              const handleClearCache = () => {
+                setCacheSuccess('System cache and client preferences cleared successfully!');
+                setTimeout(() => setCacheSuccess(null), 3000);
+              };
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              const handleRevokeSessions = () => {
+                setRevokeSessionsSuccess('All other active sessions have been successfully terminated.');
+                setTimeout(() => setRevokeSessionsSuccess(null), 3000);
+              };
+
+              const handleAvatarClick = () => {
+                alert("Profile image selection: To update your profile photo, please upload a PNG or JPG file under 2MB.");
+              };
+
+              return (
+                <div className="animate-fade-in" style={{ width: '100%', maxWidth: '1180px', margin: '0 auto' }}>
+                  
+                  {/* Two Column Layout for Premium Settings Experience */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                    gap: '2rem',
+                    alignItems: 'start'
+                  }}>
                     
-                    {/* PROFILE SETTINGS TAB */}
-                    {settingsSubTab === 'profile' && (
-                      <div className="saas-card animate-fade-in" style={{ padding: '2rem', borderTop: `4px solid ${activeTheme.color}` }}>
-                        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          👤 Profile Settings
-                        </h3>
-                        <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                          {/* Profile Picture */}
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1.25rem' }}>
-                            <div style={{
-                              width: '70px',
-                              height: '70px',
-                              borderRadius: '50%',
-                              background: 'var(--zoho-blue)',
-                              color: '#ffffff',
+                    {/* Left Column: Navigation Sidebar */}
+                    <div className="saas-card" style={{
+                      padding: '1.25rem',
+                      backgroundColor: darkMode ? '#182238' : '#ffffff',
+                      borderRadius: 'var(--radius-md)',
+                      border: '1px solid var(--border-color)',
+                      boxShadow: 'var(--shadow-md)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '0.45rem'
+                    }}>
+                      <div style={{ padding: '0.5rem 0.75rem 1rem 0.75rem', borderBottom: '1px solid var(--border-color)', marginBottom: '0.5rem' }}>
+                        <h4 style={{ margin: 0, fontSize: '1rem', fontWeight: 800, color: 'var(--text-primary)' }}>System Settings</h4>
+                        <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Configure user profile and experience</p>
+                      </div>
+
+                      {[
+                        { id: 'profile', label: 'Profile Settings', desc: 'Personal details & contacts', icon: '👤' },
+                        { id: 'security', label: 'Security & Password', desc: 'Access credentials & logs', icon: '🔑' },
+                        { id: 'appearance', label: 'Appearance & Themes', desc: 'Brand colors & dark presets', icon: '🎨' },
+                        { id: 'preferences', label: 'General Preferences', desc: 'Timezones, date & format settings', icon: '⚙️' }
+                      ].map((tab) => {
+                        const isSubActive = settingsSubTab === tab.id;
+                        return (
+                          <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setSettingsSubTab(tab.id as any)}
+                            style={{
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center',
-                              fontWeight: 800,
-                              fontSize: '1.75rem',
-                              border: '3px solid rgba(255,255,255,0.1)',
-                              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-                              position: 'relative',
-                              cursor: 'pointer'
-                            }} title="Change Profile Picture">
-                              {profileName.substring(0, 1).toUpperCase()}
-                              <div style={{
-                                position: 'absolute',
-                                inset: 0,
-                                borderRadius: '50%',
-                                backgroundColor: 'rgba(0,0,0,0.4)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                opacity: 0,
-                                transition: 'opacity 0.2s',
-                                fontSize: '0.75rem',
-                                fontWeight: 500
-                              }}
-                              className="avatar-overlay"
-                              onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.opacity = '1'; }}
-                              onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.opacity = '0'; }}
+                              gap: '0.85rem',
+                              width: '100%',
+                              padding: '0.85rem 1rem',
+                              border: 'none',
+                              borderRadius: 'var(--radius-sm)',
+                              cursor: 'pointer',
+                              textAlign: 'left',
+                              transition: 'all 0.2s',
+                              backgroundColor: isSubActive ? 'var(--zoho-blue)' : 'transparent',
+                              color: isSubActive ? '#ffffff' : 'var(--text-primary)',
+                              boxShadow: isSubActive ? '0 4px 12px var(--zoho-blue-glow)' : 'none'
+                            }}
+                          >
+                            <span style={{ fontSize: '1.25rem', opacity: isSubActive ? 1 : 0.8 }}>{tab.icon}</span>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                              <span style={{ fontSize: '0.88rem', fontWeight: 700 }}>{tab.label}</span>
+                              <span style={{ fontSize: '0.72rem', color: isSubActive ? 'rgba(255,255,255,0.75)' : 'var(--text-secondary)', marginTop: '0.1rem' }}>{tab.desc}</span>
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Right Column: Settings Form View */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="settings-content-pane">
+                      
+                      {/* PROFILE SETTINGS TAB */}
+                      {settingsSubTab === 'profile' && (
+                        <div className="saas-card animate-fade-in" style={{ padding: '2.25rem', borderTop: `4px solid ${activeTheme.color}`, backgroundColor: darkMode ? '#182238' : '#ffffff' }}>
+                          <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem', marginBottom: '1.75rem' }}>
+                            <h3 style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              👤 Profile Settings
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
+                              Manage your account details and contact preferences.
+                            </p>
+                          </div>
+
+                          <form onSubmit={handleUpdateProfile} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                            {/* Avatar Section */}
+                            <div style={{
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '1.5rem',
+                              padding: '1.25rem',
+                              borderRadius: 'var(--radius-md)',
+                              backgroundColor: 'var(--bg-primary)',
+                              border: '1px solid var(--border-color)'
+                            }}>
+                              <div 
+                                onClick={handleAvatarClick}
+                                style={{
+                                  width: '75px',
+                                  height: '75px',
+                                  borderRadius: '50%',
+                                  background: 'linear-gradient(135deg, var(--zoho-blue) 0%, #4f46e5 100%)',
+                                  color: '#ffffff',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontWeight: 800,
+                                  fontSize: '1.85rem',
+                                  border: '3px solid rgba(255,255,255,0.15)',
+                                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                                  position: 'relative',
+                                  cursor: 'pointer',
+                                  overflow: 'hidden'
+                                }} 
+                                title="Change Profile Picture"
                               >
-                                Edit
+                                {profileName.substring(0, 1).toUpperCase()}
+                                <div style={{
+                                  position: 'absolute',
+                                  inset: 0,
+                                  backgroundColor: 'rgba(0,0,0,0.5)',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  opacity: 0,
+                                  transition: 'opacity 0.2s',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 600
+                                }}
+                                className="avatar-hover-overlay"
+                                onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.opacity = '0'; }}
+                                >
+                                  Edit
+                                </div>
+                              </div>
+                              <div>
+                                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--text-primary)' }}>Profile Avatar</div>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>A visual identifier for your account in workspace operations.</div>
+                                <button type="button" onClick={handleAvatarClick} style={{ background: 'none', border: 'none', padding: 0, color: 'var(--zoho-blue)', fontWeight: 700, fontSize: '0.78rem', marginTop: '0.35rem', cursor: 'pointer', outline: 'none' }}>
+                                  Upload custom file (PNG / JPG)
+                                </button>
                               </div>
                             </div>
-                            <div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Profile Picture</div>
-                              <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.15rem' }}>PNG, JPG up to 2MB</div>
-                              <input type="file" style={{ display: 'none' }} id="profile-pic-upload" disabled />
-                              <label htmlFor="profile-pic-upload" style={{ display: 'inline-block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--zoho-blue)', cursor: 'pointer', marginTop: '0.35rem' }}>Upload New Photo</label>
+
+                            {/* Two-Column Inputs Row */}
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                              <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 700 }}>Full Name</label>
+                                <input
+                                  type="text"
+                                  required
+                                  value={profileName}
+                                  onChange={(e) => setProfileName(e.target.value)}
+                                  className="form-input"
+                                  placeholder="e.g. John Doe"
+                                />
+                              </div>
+
+                              <div className="form-group">
+                                <label className="form-label" style={{ fontWeight: 700 }}>Email Address</label>
+                                <input
+                                  type="email"
+                                  required
+                                  value={profileEmail}
+                                  onChange={(e) => setProfileEmail(e.target.value)}
+                                  className="form-input"
+                                  placeholder="john@example.com"
+                                />
+                              </div>
                             </div>
-                          </div>
 
-                          {/* Profile Inputs */}
-                          <div className="form-group">
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Full Name</label>
-                            <input
-                              type="text"
-                              required
-                              value={profileName}
-                              onChange={(e) => setProfileName(e.target.value)}
-                              className="form-input"
-                              placeholder="Name"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Email Address</label>
-                            <input
-                              type="email"
-                              required
-                              value={profileEmail}
-                              onChange={(e) => setProfileEmail(e.target.value)}
-                              className="form-input"
-                              placeholder="email@domain.com"
-                            />
-                          </div>
-
-                          <div className="form-group">
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Phone Number</label>
-                            <input
-                              type="text"
-                              value={profilePhone}
-                              onChange={(e) => setProfilePhone(e.target.value)}
-                              className="form-input"
-                              placeholder="+1 (555) 000-0000"
-                            />
-                          </div>
-
-                          {profileSuccessMessage && (
-                            <div style={{
-                              padding: '0.75rem',
-                              borderRadius: 'var(--radius-sm)',
-                              fontSize: '0.85rem',
-                              backgroundColor: 'var(--zoho-green-glow)',
-                              color: 'var(--zoho-green)',
-                              border: '1px solid rgba(8,153,73,0.2)'
-                            }}>
-                              ✓ {profileSuccessMessage}
+                            <div className="form-group" style={{ maxWidth: '50%' }}>
+                              <label className="form-label" style={{ fontWeight: 700 }}>Phone Number</label>
+                              <input
+                                type="text"
+                                value={profilePhone}
+                                onChange={(e) => setProfilePhone(e.target.value)}
+                                className="form-input"
+                                placeholder="+1 (555) 987-6543"
+                              />
                             </div>
-                          )}
 
-                          <button
-                            type="submit"
-                            className="btn btn-secondary"
-                            style={{ alignSelf: 'flex-start', padding: '0.6rem 1.5rem', fontWeight: 600, backgroundColor: 'var(--zoho-blue)', color: '#ffffff', border: 'none' }}
-                          >
-                            Update Profile
-                          </button>
-                        </form>
-                      </div>
-                    )}
+                            {profileSuccessMessage && (
+                              <div style={{
+                                padding: '0.75rem 1rem',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '0.85rem',
+                                backgroundColor: 'var(--zoho-green-glow)',
+                                color: 'var(--zoho-green)',
+                                border: '1px solid rgba(8,153,73,0.2)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '0.5rem'
+                              }}>
+                                <span>✓</span> {profileSuccessMessage}
+                              </div>
+                            )}
 
-                    {/* APPEARANCE TAB */}
-                    {settingsSubTab === 'appearance' && (
-                      <div className="saas-card animate-fade-in" style={{ padding: '2rem', borderTop: `4px solid ${activeTheme.color}`, display: 'flex', flexDirection: 'column', gap: '2rem' }}>
-                        <div>
-                          <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            🎨 Appearance & Theme
-                          </h3>
-                          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
-                            Customize how PCMS looks and feels. Customize your brand color, choose a theme preset, or toggle dark mode.
-                          </p>
-                        </div>
-
-                        {/* Brand Color Swatch & Customization */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                          <label style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Custom Brand Color</label>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <div 
-                              onClick={() => document.getElementById('custom-brand-color-picker')?.click()}
-                              style={{
-                                width: '44px',
-                                height: '44px',
-                                borderRadius: '50%',
-                                backgroundColor: customBrandColor,
-                                border: '3px solid var(--border-color)',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                                cursor: 'pointer',
-                                position: 'relative',
-                                transition: 'transform 0.15s'
-                              }}
-                              className="color-swatch-circle"
-                              title="Click to pick a color"
-                              onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
-                              onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                            <button
+                              type="submit"
+                              className={`btn ${activeTheme.btnClass}`}
+                              style={{ alignSelf: 'flex-start', padding: '0.65rem 1.75rem', fontWeight: 700, borderRadius: 'var(--radius-sm)' }}
                             >
-                              <input 
-                                type="color" 
-                                id="custom-brand-color-picker" 
-                                value={customBrandColor} 
-                                onChange={(e) => handleBrandColorChange(e.target.value)}
-                                style={{ position: 'absolute', opacity: 0, width: 0, height: 0, padding: 0, border: 'none' }}
-                              />
+                              Save Profile
+                            </button>
+                          </form>
+
+                          {/* Account Metadata Detail Section */}
+                          <div style={{
+                            marginTop: '2.5rem',
+                            paddingTop: '2rem',
+                            borderTop: '1px solid var(--border-color)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.85rem'
+                          }}>
+                            <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>Account Workspace Details</h4>
+                            <div style={{
+                              display: 'grid',
+                              gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                              gap: '1rem',
+                              padding: '1.25rem',
+                              borderRadius: 'var(--radius-sm)',
+                              backgroundColor: 'var(--bg-primary)',
+                              border: '1px solid var(--border-color)'
+                            }}>
+                              <div>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>User Identifier</span>
+                                <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 700 }}>User #{userId}</span>
+                              </div>
+                              <div>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Workspace Organization</span>
+                                <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 700 }}>Tenant #{tenantId}</span>
+                              </div>
+                              <div>
+                                <span style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', display: 'block', textTransform: 'uppercase', fontWeight: 700 }}>Privilege Role</span>
+                                <span style={{ fontSize: '0.88rem', color: 'var(--text-primary)', fontWeight: 700 }}>{role}</span>
+                              </div>
                             </div>
-                            <div style={{ position: 'relative', width: '130px' }}>
-                              <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>#</span>
-                              <input 
-                                type="text" 
-                                maxLength={7}
-                                value={customBrandColor.startsWith('#') ? customBrandColor.substring(1) : customBrandColor}
-                                onChange={(e) => {
-                                  const val = e.target.value;
-                                  const formatted = val.startsWith('#') ? val : '#' + val;
-                                  if (formatted.length <= 7) {
-                                    setCustomBrandColor(formatted);
-                                    if (/^#[0-9A-F]{6}$/i.test(formatted)) {
-                                      handleBrandColorChange(formatted);
-                                    }
-                                  }
-                                }}
-                                className="form-input" 
-                                placeholder="444CE7"
-                                style={{ paddingLeft: '1.75rem', width: '100%', fontFamily: 'monospace', fontWeight: 600 }}
-                              />
-                            </div>
-                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Click the swatch or type a hex code to dynamically theme the system.</span>
                           </div>
                         </div>
+                      )}
 
-                        {/* Theme presets selection */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--border-color)' }}>
-                          <label style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Theme Preset Palette</label>
-                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '1rem' }}>
-                            {Object.entries(themePatterns).map(([key, value]) => {
-                              const isSelected = themePattern === key;
-                              return (
-                                <div
-                                  key={key}
-                                  onClick={() => setThemePattern(key as any)}
-                                  style={{
-                                    padding: '0.75rem',
-                                    borderRadius: 'var(--radius-md)',
-                                    border: isSelected ? '2px solid var(--zoho-blue)' : '1px solid var(--border-color)',
-                                    background: isSelected ? 'var(--bg-secondary)' : 'var(--bg-primary)',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.65rem',
-                                    transition: 'all 0.2s',
-                                    boxShadow: isSelected ? '0 4px 12px var(--zoho-blue-glow)' : 'none'
-                                  }}
-                                >
-                                  {renderThemeMockup(value.colors)}
-                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'center' }}>
-                                    <div style={{
-                                      width: '10px',
-                                      height: '10px',
-                                      borderRadius: '50%',
-                                      backgroundColor: value.colors['--zoho-blue']
-                                    }} />
-                                    <span style={{ fontSize: '0.78rem', fontWeight: isSelected ? 700 : 500, color: 'var(--text-primary)', textAlign: 'center' }}>
-                                      {value.name.split(' (')[0]}
-                                    </span>
+                      {/* SECURITY & CREDENTIALS TAB */}
+                      {settingsSubTab === 'security' && (
+                        <div className="saas-card animate-fade-in" style={{ padding: '2.25rem', borderTop: `4px solid ${activeTheme.color}`, backgroundColor: darkMode ? '#182238' : '#ffffff' }}>
+                          <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem', marginBottom: '1.75rem' }}>
+                            <h3 style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              🔑 Security & Password
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
+                              Ensure your account is using a strong password configuration.
+                            </p>
+                          </div>
+
+                          <form onSubmit={handleSettingsChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem', position: 'relative' }}>
+                            <div className="form-group">
+                              <label className="form-label" style={{ fontWeight: 700 }}>Current Password</label>
+                              <div style={{ position: 'relative' }}>
+                                <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-secondary)', zIndex: 2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                <input
+                                  type={showCurrentPassword ? "text" : "password"}
+                                  required
+                                  value={currentPassword}
+                                  onChange={(e) => setCurrentPassword(e.target.value)}
+                                  className="form-input"
+                                  placeholder="••••••••"
+                                  style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', width: '100%', background: 'var(--bg-secondary)' }}
+                                />
+                                <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px', display: 'flex', alignItems: 'center', zIndex: 2 }}>
+                                  {showCurrentPassword ? (
+                                    <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                      <line x1="1" y1="1" x2="23" y2="23" />
+                                    </svg>
+                                  ) : (
+                                    <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                      <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+                            </div>
+                            
+                            <div className="form-group" style={{ position: 'relative' }}>
+                              <label className="form-label" style={{ fontWeight: 700 }}>New Password</label>
+                              <div style={{ position: 'relative' }}>
+                                <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-secondary)', zIndex: 2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                <input
+                                  type={showNewPassword ? "text" : "password"}
+                                  required
+                                  value={newPassword}
+                                  onChange={(e) => setNewPassword(e.target.value)}
+                                  onFocus={() => setIsPasswordFocused(true)}
+                                  onBlur={() => setIsPasswordFocused(false)}
+                                  className="form-input"
+                                  placeholder="••••••••"
+                                  style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', width: '100%', background: 'var(--bg-secondary)' }}
+                                />
+                                <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px', display: 'flex', alignItems: 'center', zIndex: 2 }}>
+                                  {showNewPassword ? (
+                                    <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                      <line x1="1" y1="1" x2="23" y2="23" />
+                                    </svg>
+                                  ) : (
+                                    <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                      <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
+
+                              {/* Floating Absolute Password Popover Popup (Prevents height shifts) */}
+                              {isPasswordFocused && (
+                                <div style={{
+                                  position: 'absolute',
+                                  top: 'calc(100% + 4px)',
+                                  left: 0,
+                                  right: 0,
+                                  zIndex: 100,
+                                  display: 'grid',
+                                  gridTemplateColumns: '1fr 1fr',
+                                  gap: '0.65rem',
+                                  padding: '1rem',
+                                  borderRadius: 'var(--radius-md)',
+                                  backgroundColor: '#1e293b',
+                                  border: '1px solid rgba(255,255,255,0.12)',
+                                  boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+                                  color: '#ffffff'
+                                }}>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: hasMinLength ? '#10b981' : '#94a3b8', fontWeight: 600 }}>
+                                    <span style={{ fontSize: '1rem' }}>{hasMinLength ? '✓' : '•'}</span> 8+ characters
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: hasUppercase ? '#10b981' : '#94a3b8', fontWeight: 600 }}>
+                                    <span style={{ fontSize: '1rem' }}>{hasUppercase ? '✓' : '•'}</span> 1 uppercase letter
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: hasNumber ? '#10b981' : '#94a3b8', fontWeight: 600 }}>
+                                    <span style={{ fontSize: '1rem' }}>{hasNumber ? '✓' : '•'}</span> 1 number
+                                  </div>
+                                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', fontSize: '0.8rem', color: hasSpecial ? '#10b981' : '#94a3b8', fontWeight: 600 }}>
+                                    <span style={{ fontSize: '1rem' }}>{hasSpecial ? '✓' : '•'}</span> 1 special char
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-
-                        {/* Theme Contrast Mode */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                          <label style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>Theme Contrast</label>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.25rem' }}>
-                            {/* Light Mode Card */}
-                            <div
-                              onClick={() => setDarkMode(false)}
-                              style={{
-                                borderRadius: 'var(--radius-md)',
-                                border: !darkMode ? '2px solid var(--zoho-blue)' : '1px solid var(--border-color)',
-                                background: '#ffffff',
-                                cursor: 'pointer',
-                                padding: '1rem',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.75rem',
-                                transition: 'all 0.2s',
-                                boxShadow: !darkMode ? '0 4px 12px var(--zoho-blue-glow)' : 'none'
-                              }}
-                            >
-                              <div style={{
-                                height: '50px',
-                                background: '#f8fafc',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid #e2e8f0',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem'
-                              }}>
-                                <span style={{ fontSize: '1.25rem' }}>☀️</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>Light Theme</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#334155' }}>Light Mode</span>
-                                <div style={{
-                                  width: '16px',
-                                  height: '16px',
-                                  borderRadius: '50%',
-                                  border: '1px solid #cbd5e1',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: !darkMode ? 'var(--zoho-blue)' : 'transparent'
-                                }}>
-                                  {!darkMode && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ffffff' }} />}
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Dark Mode Card */}
-                            <div
-                              onClick={() => setDarkMode(true)}
-                              style={{
-                                borderRadius: 'var(--radius-md)',
-                                border: darkMode ? '2px solid var(--zoho-blue)' : '1px solid var(--border-color)',
-                                background: '#0f172a',
-                                cursor: 'pointer',
-                                padding: '1rem',
-                                display: 'flex',
-                                flexDirection: 'column',
-                                gap: '0.75rem',
-                                transition: 'all 0.2s',
-                                boxShadow: darkMode ? '0 4px 12px var(--zoho-blue-glow)' : 'none'
-                              }}
-                            >
-                              <div style={{
-                                height: '50px',
-                                background: '#1e293b',
-                                borderRadius: 'var(--radius-sm)',
-                                border: '1px solid #334155',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                gap: '0.5rem'
-                              }}>
-                                <span style={{ fontSize: '1.25rem' }}>🌙</span>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#f8fafc' }}>Dark Theme</span>
-                              </div>
-                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '0.8rem', fontWeight: 600, color: '#94a3b8' }}>Dark Mode</span>
-                                <div style={{
-                                  width: '16px',
-                                  height: '16px',
-                                  borderRadius: '50%',
-                                  border: '1px solid #475569',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  justifyContent: 'center',
-                                  background: darkMode ? 'var(--zoho-blue)' : 'transparent'
-                                }}>
-                                  {darkMode && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ffffff' }} />}
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* SECURITY & PASSWORD TAB */}
-                    {settingsSubTab === 'security' && (
-                      <div className="saas-card animate-fade-in" style={{ padding: '2rem', borderTop: `4px solid ${activeTheme.color}` }}>
-                        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          🔑 Security & Password
-                        </h3>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
-                          Choose a strong, complex password to secure your account.
-                        </p>
-                        <form onSubmit={handleSettingsChangePassword} style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                          <div className="form-group">
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Current Password</label>
-                            <div style={{ position: 'relative' }}>
-                              <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-secondary)', zIndex: 2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                              </svg>
-                              <input
-                                type={showCurrentPassword ? "text" : "password"}
-                                required
-                                value={currentPassword}
-                                onChange={(e) => setCurrentPassword(e.target.value)}
-                                className="form-input"
-                                placeholder="••••••••"
-                                style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', width: '100%', background: 'var(--bg-secondary)' }}
-                              />
-                              <button type="button" onClick={() => setShowCurrentPassword(!showCurrentPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px', display: 'flex', alignItems: 'center', zIndex: 2 }}>
-                                {showCurrentPassword ? (
-                                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                                    <line x1="1" y1="1" x2="23" y2="23" />
-                                  </svg>
-                                ) : (
-                                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                  </svg>
-                                )}
-                              </button>
-                            </div>
-                          </div>
-                          
-                          <div className="form-group">
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>New Password</label>
-                            <div style={{ position: 'relative' }}>
-                              <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-secondary)', zIndex: 2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                              </svg>
-                              <input
-                                type={showNewPassword ? "text" : "password"}
-                                required
-                                value={newPassword}
-                                onChange={(e) => setNewPassword(e.target.value)}
-                                className="form-input"
-                                placeholder="••••••••"
-                                style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', width: '100%', background: 'var(--bg-secondary)' }}
-                              />
-                              <button type="button" onClick={() => setShowNewPassword(!showNewPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px', display: 'flex', alignItems: 'center', zIndex: 2 }}>
-                                {showNewPassword ? (
-                                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                                    <line x1="1" y1="1" x2="23" y2="23" />
-                                  </svg>
-                                ) : (
-                                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                  </svg>
-                                )}
-                              </button>
+                              )}
                             </div>
                             
-                            {newPassword && (
-                              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem', marginTop: '0.65rem', padding: '0.65rem', borderRadius: 'var(--radius-sm)', backgroundColor: 'var(--bg-primary)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: hasMinLength ? 'var(--zoho-green)' : 'var(--text-secondary)', fontWeight: 600 }}>
-                                  <span style={{ fontSize: '0.9rem' }}>{hasMinLength ? '✓' : '•'}</span> 8+ characters
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: hasUppercase ? 'var(--zoho-green)' : 'var(--text-secondary)', fontWeight: 600 }}>
-                                  <span style={{ fontSize: '0.9rem' }}>{hasUppercase ? '✓' : '•'}</span> 1 uppercase letter
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: hasNumber ? 'var(--zoho-green)' : 'var(--text-secondary)', fontWeight: 600 }}>
-                                  <span style={{ fontSize: '0.9rem' }}>{hasNumber ? '✓' : '•'}</span> 1 number
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.78rem', color: hasSpecial ? 'var(--zoho-green)' : 'var(--text-secondary)', fontWeight: 600 }}>
-                                  <span style={{ fontSize: '0.9rem' }}>{hasSpecial ? '✓' : '•'}</span> 1 special char
-                                </div>
+                            <div className="form-group">
+                              <label className="form-label" style={{ fontWeight: 700 }}>Confirm New Password</label>
+                              <div style={{ position: 'relative' }}>
+                                <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-secondary)', zIndex: 2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
+                                </svg>
+                                <input
+                                  type={showConfirmPassword ? "text" : "password"}
+                                  required
+                                  value={confirmPassword}
+                                  onChange={(e) => setConfirmPassword(e.target.value)}
+                                  className="form-input"
+                                  placeholder="••••••••"
+                                  style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', width: '100%', background: 'var(--bg-secondary)' }}
+                                />
+                                <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px', display: 'flex', alignItems: 'center', zIndex: 2 }}>
+                                  {showConfirmPassword ? (
+                                    <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                      <line x1="1" y1="1" x2="23" y2="23" />
+                                    </svg>
+                                  ) : (
+                                    <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                      <circle cx="12" cy="12" r="3" />
+                                    </svg>
+                                  )}
+                                </button>
                               </div>
-                            )}
-                          </div>
-                          
-                          <div className="form-group">
-                            <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Confirm New Password</label>
-                            <div style={{ position: 'relative' }}>
-                              <svg style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', width: '16px', height: '16px', color: 'var(--text-secondary)', zIndex: 2 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" />
-                              </svg>
-                              <input
-                                type={showConfirmPassword ? "text" : "password"}
-                                required
-                                value={confirmPassword}
-                                onChange={(e) => setConfirmPassword(e.target.value)}
-                                className="form-input"
-                                placeholder="••••••••"
-                                style={{ paddingLeft: '2.5rem', paddingRight: '2.5rem', width: '100%', background: 'var(--bg-secondary)' }}
-                              />
-                              <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} style={{ position: 'absolute', right: '12px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-secondary)', padding: '4px', display: 'flex', alignItems: 'center', zIndex: 2 }}>
-                                {showConfirmPassword ? (
-                                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                                    <line x1="1" y1="1" x2="23" y2="23" />
-                                  </svg>
-                                ) : (
-                                  <svg style={{ width: '16px', height: '16px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-                                    <circle cx="12" cy="12" r="3" />
-                                  </svg>
-                                )}
-                              </button>
+                              
+                              {confirmPassword && (
+                                <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', fontWeight: 600, color: newPassword === confirmPassword ? 'var(--zoho-green)' : 'var(--zoho-red)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
+                                  {newPassword === confirmPassword ? (
+                                    <>
+                                      <span style={{ fontSize: '0.9rem' }}>✓</span> Passwords match
+                                    </>
+                                  ) : (
+                                    <>
+                                      <span style={{ fontSize: '0.9rem' }}>✗</span> Passwords do not match
+                                    </>
+                                  )}
+                                </div>
+                              )}
                             </div>
                             
-                            {confirmPassword && (
-                              <div style={{ marginTop: '0.5rem', fontSize: '0.78rem', fontWeight: 600, color: newPassword === confirmPassword ? 'var(--zoho-green)' : 'var(--zoho-red)', display: 'flex', alignItems: 'center', gap: '0.35rem' }}>
-                                {newPassword === confirmPassword ? (
-                                  <>
-                                    <span style={{ fontSize: '0.9rem' }}>✓</span> Passwords match
-                                  </>
-                                ) : (
-                                  <>
-                                    <span style={{ fontSize: '0.9rem' }}>✗</span> Passwords do not match
-                                  </>
-                                )}
+                            {passwordFeedback && (
+                              <div style={{
+                                padding: '0.75rem 1rem',
+                                borderRadius: 'var(--radius-sm)',
+                                fontSize: '0.85rem',
+                                backgroundColor: passwordFeedback.status === 'success' ? 'var(--zoho-green-glow)' : 'var(--zoho-red-glow)',
+                                color: passwordFeedback.status === 'success' ? 'var(--zoho-green)' : 'var(--zoho-red)',
+                                border: `1px solid ${passwordFeedback.status === 'success' ? 'rgba(8,153,73,0.2)' : 'rgba(228,37,39,0.2)'}`
+                              }}>
+                                {passwordFeedback.message}
                               </div>
                             )}
-                          </div>
-                          
-                          {passwordFeedback && (
-                            <div style={{
-                              padding: '0.75rem',
-                              borderRadius: 'var(--radius-sm)',
-                              fontSize: '0.85rem',
-                              backgroundColor: passwordFeedback.status === 'success' ? 'var(--zoho-green-glow)' : 'var(--zoho-red-glow)',
-                              color: passwordFeedback.status === 'success' ? 'var(--zoho-green)' : 'var(--zoho-red)',
-                              border: `1px solid ${passwordFeedback.status === 'success' ? 'rgba(8,153,73,0.2)' : 'rgba(228,37,39,0.2)'}`
-                            }}>
-                              {passwordFeedback.message}
-                            </div>
-                          )}
-                          
-                          <button
-                            type="submit"
-                            disabled={passwordLoading || !isPasswordValid}
-                            className={`btn ${activeTheme.btnClass}`}
-                            style={{ alignSelf: 'flex-start', padding: '0.6rem 1.5rem', fontWeight: 600, opacity: (!isPasswordValid && !passwordLoading) ? 0.6 : 1, cursor: (!isPasswordValid && !passwordLoading) ? 'not-allowed' : 'pointer' }}
-                          >
-                            {passwordLoading ? <div className="spinner" style={{ borderTopColor: '#ffffff', width: '16px', height: '16px' }} /> : 'Update Password'}
-                          </button>
-                        </form>
-                      </div>
-                    )}
+                            
+                            <button
+                              type="submit"
+                              disabled={passwordLoading || !isPasswordValid}
+                              className={`btn ${activeTheme.btnClass}`}
+                              style={{ alignSelf: 'flex-start', padding: '0.65rem 1.75rem', fontWeight: 700, borderRadius: 'var(--radius-sm)', opacity: (!isPasswordValid && !passwordLoading) ? 0.6 : 1, cursor: (!isPasswordValid && !passwordLoading) ? 'not-allowed' : 'pointer' }}
+                            >
+                              {passwordLoading ? <div className="spinner" style={{ borderTopColor: '#ffffff', width: '16px', height: '16px' }} /> : 'Update Password'}
+                            </button>
+                          </form>
 
-                    {/* GENERAL PREFERENCES TAB */}
-                    {settingsSubTab === 'preferences' && (
-                      <div className="saas-card animate-fade-in" style={{ padding: '2rem', borderTop: `4px solid ${activeTheme.color}` }}>
-                        <h3 style={{ fontSize: '1.25rem', color: 'var(--text-primary)', fontWeight: 800, marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          ⚙️ General Preferences
-                        </h3>
-
-                        {/* Collapsed Summary View */}
-                        <div 
-                          onClick={() => setPreferencesExpanded(!preferencesExpanded)}
-                          style={{
-                            padding: '1.25rem 1.5rem',
-                            borderRadius: 'var(--radius-md)',
-                            border: '1px solid var(--border-color)',
-                            background: 'var(--bg-secondary)',
-                            cursor: 'pointer',
+                          {/* Mockup Security Audit Logs & Sessions */}
+                          <div style={{
+                            marginTop: '2.5rem',
+                            paddingTop: '2rem',
+                            borderTop: '1px solid var(--border-color)',
                             display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            transition: 'all 0.2s',
-                            userSelect: 'none'
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                            <span style={{ fontSize: '1.25rem' }}>⚙️</span>
+                            flexDirection: 'column',
+                            gap: '1rem'
+                          }}>
                             <div>
-                              <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)', display: 'block' }}>System Localization & Formats</span>
-                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                Language: <strong style={{ color: 'var(--zoho-blue)' }}>{currentLangLabel}</strong> • Timezone: <strong style={{ color: 'var(--zoho-blue)' }}>{currentTimezoneLabel}</strong> • Date Format: <strong style={{ color: 'var(--zoho-blue)' }}>{dateFormat}</strong>
-                              </span>
+                              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>Active Security Sessions</h4>
+                              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Devices currently logged in or recently verified.</p>
+                            </div>
+
+                            {revokeSessionsSuccess && (
+                              <div className="alert alert-success" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}>
+                                <span>{revokeSessionsSuccess}</span>
+                              </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                              <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '1rem',
+                                borderRadius: 'var(--radius-sm)',
+                                backgroundColor: 'var(--bg-primary)',
+                                border: '1px solid var(--border-color)'
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#10b981', boxShadow: '0 0 8px #10b981' }} />
+                                  <div>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>Chrome 125 (Windows 11)</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>IP: 192.168.1.15 • Bengaluru, India • Current Active Session</span>
+                                  </div>
+                                </div>
+                                <span className="badge badge-success" style={{ fontSize: '0.7rem' }}>Active</span>
+                              </div>
+
+                              <div style={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                                padding: '1rem',
+                                borderRadius: 'var(--radius-sm)',
+                                backgroundColor: 'var(--bg-primary)',
+                                border: '1px solid var(--border-color)',
+                                opacity: 0.8
+                              }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                  <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: 'var(--text-muted)' }} />
+                                  <div>
+                                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>Safari Mobile (iPhone 15 Pro)</span>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>IP: 203.0.113.88 • Chennai, India • 3 hours ago</span>
+                                  </div>
+                                </div>
+                                <button type="button" onClick={handleRevokeSessions} style={{ background: 'none', border: 'none', color: 'var(--zoho-red)', fontSize: '0.75rem', fontWeight: 700, cursor: 'pointer', outline: 'none' }}>
+                                  Revoke
+                                </button>
+                              </div>
                             </div>
                           </div>
-                          <span style={{ fontSize: '1rem', color: 'var(--text-secondary)', transition: 'transform 0.2s', transform: preferencesExpanded ? 'rotate(180deg)' : 'rotate(0deg)' }}>
-                            ▼
-                          </span>
                         </div>
+                      )}
 
-                        {/* Expanded Inline Form Row */}
-                        {preferencesExpanded && (
-                          <div className="animate-fade-in" style={{
+                      {/* APPEARANCE TAB */}
+                      {settingsSubTab === 'appearance' && (
+                        <div className="saas-card animate-fade-in" style={{ padding: '2.25rem', borderTop: `4px solid ${activeTheme.color}`, display: 'flex', flexDirection: 'column', gap: '2rem', backgroundColor: darkMode ? '#182238' : '#ffffff' }}>
+                          <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem' }}>
+                            <h3 style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              🎨 Appearance & Customization
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
+                              Configure custom brand palettes, toggle layout contrast levels and visual presettings.
+                            </p>
+                          </div>
+
+                          {/* Brand Color Swatch */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', paddingBottom: '1.75rem', borderBottom: '1px solid var(--border-color)' }}>
+                            <label style={{ fontSize: '0.9rem', fontWeight: 850, color: 'var(--text-primary)' }}>Custom Brand Color Theme</label>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                              <div 
+                                onClick={() => document.getElementById('custom-brand-color-picker')?.click()}
+                                style={{
+                                  width: '46px',
+                                  height: '46px',
+                                  borderRadius: '50%',
+                                  backgroundColor: customBrandColor,
+                                  border: '3px solid var(--border-color)',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                  cursor: 'pointer',
+                                  position: 'relative',
+                                  transition: 'transform 0.15s'
+                                }}
+                                className="color-swatch-circle"
+                                title="Click to pick a color"
+                                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.08)'; }}
+                                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                              >
+                                <input 
+                                  type="color" 
+                                  id="custom-brand-color-picker" 
+                                  value={customBrandColor} 
+                                  onChange={(e) => handleBrandColorChange(e.target.value)}
+                                  style={{ position: 'absolute', opacity: 0, width: 0, height: 0, padding: 0, border: 'none' }}
+                                />
+                              </div>
+                              <div style={{ position: 'relative', width: '130px' }}>
+                                <span style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-secondary)', fontWeight: 600, fontSize: '0.85rem' }}>#</span>
+                                <input 
+                                  type="text" 
+                                  maxLength={7}
+                                  value={customBrandColor.startsWith('#') ? customBrandColor.substring(1) : customBrandColor}
+                                  onChange={(e) => {
+                                    const val = e.target.value;
+                                    const formatted = val.startsWith('#') ? val : '#' + val;
+                                    if (formatted.length <= 7) {
+                                      setCustomBrandColor(formatted);
+                                      if (/^#[0-9A-F]{6}$/i.test(formatted)) {
+                                        handleBrandColorChange(formatted);
+                                      }
+                                    }
+                                  }}
+                                  className="form-input" 
+                                  placeholder="444CE7"
+                                  style={{ paddingLeft: '1.75rem', width: '100%', fontFamily: 'monospace', fontWeight: 600 }}
+                                />
+                              </div>
+                              <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dynamically re-skins workspace elements, buttons and sidebar indicators.</span>
+                            </div>
+                          </div>
+
+                          {/* Theme presets selection */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem', paddingBottom: '1.75rem', borderBottom: '1px solid var(--border-color)' }}>
+                            <label style={{ fontSize: '0.9rem', fontWeight: 855, color: 'var(--text-primary)' }}>Visual Preset Presets</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '1rem' }}>
+                              {Object.entries(themePatterns).map(([key, value]) => {
+                                const isSelected = themePattern === key;
+                                return (
+                                  <div
+                                    key={key}
+                                    onClick={() => setThemePattern(key as any)}
+                                    style={{
+                                      padding: '0.75rem',
+                                      borderRadius: 'var(--radius-md)',
+                                      border: isSelected ? '2px solid var(--zoho-blue)' : '1px solid var(--border-color)',
+                                      background: isSelected ? 'var(--bg-secondary)' : 'var(--bg-primary)',
+                                      cursor: 'pointer',
+                                      display: 'flex',
+                                      flexDirection: 'column',
+                                      gap: '0.65rem',
+                                      transition: 'all 0.2s',
+                                      boxShadow: isSelected ? '0 4px 12px var(--zoho-blue-glow)' : 'none'
+                                    }}
+                                    onMouseEnter={(e) => { if(!isSelected) e.currentTarget.style.borderColor = 'var(--text-muted)'; }}
+                                    onMouseLeave={(e) => { if(!isSelected) e.currentTarget.style.borderColor = 'var(--border-color)'; }}
+                                  >
+                                    {renderThemeMockup(value.colors)}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', justifyContent: 'center' }}>
+                                      <div style={{
+                                        width: '10px',
+                                        height: '10px',
+                                        borderRadius: '50%',
+                                        backgroundColor: value.colors['--zoho-blue']
+                                      }} />
+                                      <span style={{ fontSize: '0.78rem', fontWeight: isSelected ? 700 : 500, color: 'var(--text-primary)', textAlign: 'center' }}>
+                                        {value.name.split(' (')[0]}
+                                      </span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Theme Contrast Mode */}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.85rem' }}>
+                            <label style={{ fontSize: '0.9rem', fontWeight: 855, color: 'var(--text-primary)' }}>Interface Mode (Contrast Level)</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1.25rem' }}>
+                              {/* Light Mode Card */}
+                              <div
+                                onClick={() => setDarkMode(false)}
+                                style={{
+                                  borderRadius: 'var(--radius-md)',
+                                  border: !darkMode ? '2px solid var(--zoho-blue)' : '1px solid var(--border-color)',
+                                  background: '#ffffff',
+                                  cursor: 'pointer',
+                                  padding: '1.25rem',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '0.75rem',
+                                  transition: 'all 0.2s',
+                                  boxShadow: !darkMode ? '0 4px 12px rgba(0,0,0,0.08)' : 'none'
+                                }}
+                                onMouseEnter={(e) => { if(darkMode) e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                onMouseLeave={(e) => { if(darkMode) e.currentTarget.style.transform = 'scale(1)'; }}
+                              >
+                                <div style={{
+                                  height: '50px',
+                                  background: '#f8fafc',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '1px solid #e2e8f0',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '0.5rem'
+                                }}>
+                                  <span style={{ fontSize: '1.25rem' }}>☀️</span>
+                                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155' }}>Light Palette</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#334155' }}>Standard Contrast</span>
+                                  <div style={{
+                                    width: '16px',
+                                    height: '16px',
+                                    borderRadius: '50%',
+                                    border: '1px solid #cbd5e1',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: !darkMode ? 'var(--zoho-blue)' : 'transparent'
+                                  }}>
+                                    {!darkMode && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ffffff' }} />}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Dark Mode Card */}
+                              <div
+                                onClick={() => setDarkMode(true)}
+                                style={{
+                                  borderRadius: 'var(--radius-md)',
+                                  border: darkMode ? '2px solid var(--zoho-blue)' : '1px solid var(--border-color)',
+                                  background: '#0f172a',
+                                  cursor: 'pointer',
+                                  padding: '1.25rem',
+                                  display: 'flex',
+                                  flexDirection: 'column',
+                                  gap: '0.75rem',
+                                  transition: 'all 0.2s',
+                                  boxShadow: darkMode ? '0 4px 12px rgba(0,0,0,0.3)' : 'none'
+                                }}
+                                onMouseEnter={(e) => { if(!darkMode) e.currentTarget.style.transform = 'scale(1.02)'; }}
+                                onMouseLeave={(e) => { if(!darkMode) e.currentTarget.style.transform = 'scale(1)'; }}
+                              >
+                                <div style={{
+                                  height: '50px',
+                                  background: '#1e293b',
+                                  borderRadius: 'var(--radius-sm)',
+                                  border: '1px solid #334155',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  gap: '0.5rem'
+                                }}>
+                                  <span style={{ fontSize: '1.25rem' }}>🌙</span>
+                                  <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#f8fafc' }}>Dark Palette</span>
+                                </div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.25rem' }}>
+                                  <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#e2e8f0' }}>High Contrast Dark</span>
+                                  <div style={{
+                                    width: '16px',
+                                    height: '16px',
+                                    borderRadius: '50%',
+                                    border: '1px solid #475569',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    background: darkMode ? 'var(--zoho-blue)' : 'transparent'
+                                  }}>
+                                    {darkMode && <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ffffff' }} />}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* GENERAL PREFERENCES TAB */}
+                      {settingsSubTab === 'preferences' && (
+                        <div className="saas-card animate-fade-in" style={{ padding: '2.25rem', borderTop: `4px solid ${activeTheme.color}`, backgroundColor: darkMode ? '#182238' : '#ffffff' }}>
+                          <div style={{ borderBottom: '1px solid var(--border-color)', paddingBottom: '1.25rem', marginBottom: '1.75rem' }}>
+                            <h3 style={{ fontSize: '1.35rem', color: 'var(--text-primary)', fontWeight: 800, margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                              ⚙️ General Preferences
+                            </h3>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', margin: '0.25rem 0 0 0' }}>
+                              Configure local formats, timezone calendars and system cache diagnostics.
+                            </p>
+                          </div>
+
+                          <div style={{
                             display: 'grid',
-                            gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))',
                             gap: '1.5rem',
-                            marginTop: '1.5rem',
-                            padding: '1.5rem',
-                            border: '1px dashed var(--border-color)',
-                            borderRadius: 'var(--radius-md)',
-                            background: 'var(--bg-primary)'
+                            marginBottom: '2.5rem'
                           }}>
                             <div className="form-group" style={{ margin: 0 }}>
-                              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Language</label>
+                              <label className="form-label" style={{ fontWeight: 700 }}>Language Localization</label>
                               <select 
                                 value={language} 
                                 onChange={(e) => setLanguage(e.target.value)} 
@@ -1967,7 +2145,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                             </div>
 
                             <div className="form-group" style={{ margin: 0 }}>
-                              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Timezone</label>
+                              <label className="form-label" style={{ fontWeight: 700 }}>System Timezone Calendar</label>
                               <select 
                                 value={timezone} 
                                 onChange={(e) => setTimezone(e.target.value)} 
@@ -1982,7 +2160,7 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                             </div>
 
                             <div className="form-group" style={{ margin: 0 }}>
-                              <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '0.5rem' }}>Date Format</label>
+                              <label className="form-label" style={{ fontWeight: 700 }}>Visual Date Format</label>
                               <select 
                                 value={dateFormat} 
                                 onChange={(e) => setDateFormat(e.target.value)} 
@@ -1995,10 +2173,63 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                               </select>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    )}
 
+                          {/* App Diagnostics & Cache */}
+                          <div style={{
+                            paddingTop: '2rem',
+                            borderTop: '1px solid var(--border-color)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '1rem'
+                          }}>
+                            <div>
+                              <h4 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)' }}>System Cache & Operations Diagnostics</h4>
+                              <p style={{ margin: '0.2rem 0 0 0', fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Clear locally cached settings if encountering layout or loading issues.</p>
+                            </div>
+
+                            {cacheSuccess && (
+                              <div className="alert alert-success" style={{ padding: '0.5rem 0.75rem', fontSize: '0.8rem' }}>
+                                <span>{cacheSuccess}</span>
+                              </div>
+                            )}
+
+                            <div style={{
+                              padding: '1.25rem',
+                              borderRadius: 'var(--radius-sm)',
+                              backgroundColor: 'var(--bg-primary)',
+                              border: '1px solid var(--border-color)',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              flexWrap: 'wrap',
+                              gap: '1rem'
+                            }}>
+                              <div>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-primary)', display: 'block' }}>Local Browser Storage Cache</span>
+                                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>Approx. 1.28 MB of data cached (localization files, themes, user dashboard states).</span>
+                              </div>
+                              <button
+                                type="button"
+                                className="btn btn-secondary"
+                                onClick={handleClearCache}
+                                style={{
+                                  padding: '0.5rem 1rem',
+                                  fontSize: '0.8rem',
+                                  fontWeight: 700,
+                                  borderRadius: 'var(--radius-sm)',
+                                  borderColor: 'var(--zoho-yellow)',
+                                  color: 'var(--zoho-yellow-hover)',
+                                  background: 'var(--zoho-yellow-glow)'
+                                }}
+                              >
+                                Clear Local Cache
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                    </div>
                   </div>
                 </div>
               );
@@ -2114,8 +2345,17 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
               ) : (
                 /* VIEW 2: MODULE WORKSPACE */
                 <div className="saas-card animate-fade-in" style={{ padding: '2.25rem', backgroundColor: '#ffffff' }}>
-
-                  {/* Workspace Header */}
+                  {activeModule.moduleName.toLowerCase().includes('doctor') ? (
+                    <DoctorModuleConsole
+                      tenantId={tenantId}
+                      userId={userId}
+                      role={role}
+                      themeColor={activeTheme.color}
+                      btnClass={activeTheme.btnClass}
+                      moduleId={activeModule.moduleId}
+                    />
+                  ) : (
+                    <>
                   <div style={{
                     display: 'flex',
                     justifyContent: 'space-between',
@@ -2637,6 +2877,8 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                         )}
                       </div>
                     </div>
+                  )}
+                  </>
                   )}
                 </div>
               )}

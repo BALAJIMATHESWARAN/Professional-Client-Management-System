@@ -4,7 +4,7 @@ import { TenantSelector } from './components/TenantSelector';
 import { SuperAdminDashboard } from './components/SuperAdminDashboard';
 import { UserDashboard } from './components/UserDashboard';
 import { ResetPassword } from './components/ResetPassword';
-import { api, getStoredUser, getStoredToken } from './api';
+import { api, getStoredUser, getStoredToken, setStoredUser } from './api';
 import type { LoginResponse, TenantInfo } from './api';
 import logoImg from './assets/logo.png';
 import { applyThemePattern } from './themeUtils';
@@ -59,15 +59,16 @@ function App() {
     const token = getStoredToken();
 
     if (storedUser && token) {
+      setUser(storedUser);
       if (storedUser.isSuperAdmin) {
-        setUser(storedUser);
         setView('super-admin-dashboard');
       } else if (storedUser.selectedTenantId) {
-        setUser(storedUser);
         setView('user-dashboard');
+      } else if (storedUser.availableTenants && storedUser.availableTenants.length > 0) {
+        setView('tenant-selector');
       } else {
-        // Logged in but hasn't selected a tenant yet.
         api.logout();
+        setUser(null);
         setView('login');
       }
     } else {
@@ -122,6 +123,16 @@ function App() {
                 availableTenants: userTenants
               };
               setUser(newUser);
+              
+              // Persist selection contexts in localStorage
+              const storedUser = getStoredUser();
+              if (storedUser) {
+                storedUser.selectedTenantId = singleTenant.tenantId;
+                storedUser.role = singleTenant.role;
+                storedUser.availableTenants = userTenants;
+                setStoredUser(storedUser);
+              }
+              
               setView('user-dashboard');
             })
             .catch((err) => {
@@ -165,6 +176,16 @@ function App() {
         role: selectedTenant.role
       };
       setUser(updatedUser);
+
+      // Persist selection contexts in localStorage
+      const storedUser = getStoredUser();
+      if (storedUser) {
+        storedUser.selectedTenantId = tenantId;
+        storedUser.role = selectedTenant.role;
+        storedUser.availableTenants = user.availableTenants;
+        setStoredUser(storedUser);
+      }
+
       setView('user-dashboard');
       setIsTransitioning(false);
     }, transitionDuration);

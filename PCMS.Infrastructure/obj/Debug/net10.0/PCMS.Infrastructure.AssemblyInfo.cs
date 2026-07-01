@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("PCMS.Infrastructure")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+9ad11ebd0a2ce8cf10447eb51360caed67115c69")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+27627729920629a2c8ef07706dbe649751eb92a7")]
 [assembly: System.Reflection.AssemblyProductAttribute("PCMS.Infrastructure")]
 [assembly: System.Reflection.AssemblyTitleAttribute("PCMS.Infrastructure")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

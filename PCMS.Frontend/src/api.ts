@@ -158,17 +158,33 @@ export const api = {
       body: JSON.stringify({ email, password }),
     });
     
-    if (res.token) {
-      setStoredToken(res.token);
+    if (res.userId) {
+      if (res.token) {
+        setStoredToken(res.token);
+      }
       setStoredUser({
         userId: res.userId,
         userName: res.userName,
         isSuperAdmin: res.isSuperAdmin,
         selectedTenantId: null,
+        availableTenants: res.tenants || [],
       });
     }
     return res;
   },
+
+  // OTP verification for password reset
+  verifyOtpResetPassword: async (email: string, otp: string, newPassword: string): Promise<{ message: string }> =>
+    request<{ message: string }>('/api/auth/reset-password-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp, newPassword }),
+    }),
+
+  verifyOtp: async (email: string, otp: string): Promise<{ valid: boolean; message: string }> =>
+    request<{ valid: boolean; message: string }>('/api/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    }),
 
   selectTenant: async (userId: number, tenantId: number): Promise<TokenResponse> => {
     const res = await request<TokenResponse>('/api/auth/select-tenant', {
@@ -190,6 +206,9 @@ export const api = {
   logout: () => {
     removeStoredToken();
     removeStoredUser();
+    localStorage.removeItem('pcms_user_active_tab');
+    localStorage.removeItem('pcms_user_active_module_id');
+    localStorage.removeItem('pcms_sa_active_tab');
   },
 
   forgotPassword: async (email: string): Promise<{ message: string }> => {
@@ -205,6 +224,7 @@ export const api = {
       body: JSON.stringify({ email, token, newPassword }),
     });
   },
+
 
   changePassword: async (currentPassword: string, newPassword: string): Promise<{ message: string }> => {
     return request<{ message: string }>('/api/auth/change-password', {
@@ -336,5 +356,175 @@ export const api = {
 
   getAuditLogs: async (): Promise<AuditLog[]> => {
     return request<AuditLog[]>('/api/AuditLog');
+  },
+
+  // Doctors
+  getDoctors: async (search?: string, specialization?: string): Promise<any[]> => {
+    let url = '/api/doctor';
+    const params = new URLSearchParams();
+    if (search) params.append('search', search);
+    if (specialization) params.append('specialization', specialization);
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+    return request<any[]>(url);
+  },
+  getDoctorById: async (id: number): Promise<any> => {
+    return request<any>(`/api/doctor/${id}`);
+  },
+  createDoctor: async (data: any): Promise<any> => {
+    return request<any>('/api/doctor', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateDoctor: async (id: number, data: any): Promise<any> => {
+    return request<any>(`/api/doctor/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  toggleDoctorStatus: async (id: number): Promise<any> => {
+    return request<any>(`/api/doctor/${id}/toggle`, {
+      method: 'POST',
+    });
+  },
+  getDoctorSpecializations: async (): Promise<string[]> => {
+    return request<string[]>('/api/doctor/specializations');
+  },
+
+  // Staff (Receptionist)
+  getReceptionists: async (): Promise<any[]> => {
+    return request<any[]>('/api/receptionist');
+  },
+  createReceptionist: async (data: any): Promise<any> => {
+    return request<any>('/api/receptionist', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateReceptionist: async (id: number, data: any): Promise<any> => {
+    return request<any>(`/api/receptionist/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  toggleReceptionistStatus: async (id: number): Promise<any> => {
+    return request<any>(`/api/receptionist/${id}/toggle`, {
+      method: 'POST',
+    });
+  },
+
+  // Staff (Nurse)
+  getNurses: async (): Promise<any[]> => {
+    return request<any[]>('/api/nurse');
+  },
+  createNurse: async (data: any): Promise<any> => {
+    return request<any>('/api/nurse', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateNurse: async (id: number, data: any): Promise<any> => {
+    return request<any>(`/api/nurse/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  toggleNurseStatus: async (id: number): Promise<any> => {
+    return request<any>(`/api/nurse/${id}/toggle`, {
+      method: 'POST',
+    });
+  },
+
+  // Patients
+  getPatients: async (search?: string, pageNumber: number = 1, pageSize: number = 10): Promise<{ patients: any[]; totalCount: number }> => {
+    let url = `/api/patient?pageNumber=${pageNumber}&pageSize=${pageSize}`;
+    if (search) url += `&search=${encodeURIComponent(search)}`;
+    return request<{ patients: any[]; totalCount: number }>(url);
+  },
+  getPatientById: async (id: number): Promise<any> => {
+    return request<any>(`/api/patient/${id}`);
+  },
+  createPatient: async (data: any): Promise<any> => {
+    return request<any>('/api/patient', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updatePatient: async (id: number, data: any): Promise<any> => {
+    return request<any>(`/api/patient/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  deletePatient: async (id: number): Promise<any> => {
+    return request<any>(`/api/patient/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  // Appointments
+  getAppointments: async (date?: string, patientId?: number, doctorId?: number): Promise<any[]> => {
+    let url = '/api/appointment';
+    const params = new URLSearchParams();
+    if (date) params.append('date', date);
+    if (patientId) params.append('patientId', patientId.toString());
+    if (doctorId) params.append('doctorId', doctorId.toString());
+    const qs = params.toString();
+    if (qs) url += `?${qs}`;
+    return request<any[]>(url);
+  },
+  createAppointment: async (data: any): Promise<any> => {
+    return request<any>('/api/appointment', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateAppointment: async (id: number, data: any): Promise<any> => {
+    return request<any>(`/api/appointment/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  updateAppointmentStatus: async (id: number, status: string): Promise<any> => {
+    return request<any>(`/api/appointment/${id}/status`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(status),
+    });
+  },
+
+  // Roles & Permissions
+  getRoles: async (): Promise<any[]> => {
+    return request<any[]>('/api/rolepermission/role');
+  },
+  createRole: async (data: any): Promise<any> => {
+    return request<any>('/api/rolepermission/role', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+  updateRole: async (id: number, data: any): Promise<any> => {
+    return request<any>(`/api/rolepermission/role/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+  getPermissions: async (): Promise<any[]> => {
+    return request<any[]>('/api/rolepermission/permissions');
+  },
+  getUserPermissions: async (): Promise<string[]> => {
+    return request<string[]>('/api/rolepermission/user-permissions');
+  },
+  getDashboardWidgets: async (roleId: number): Promise<string[]> => {
+    return request<string[]>(`/api/rolepermission/dashboard-widgets/${roleId}`);
+  },
+  updateDashboardWidgets: async (roleId: number, widgetKeys: string[]): Promise<any> => {
+    return request<any>(`/api/rolepermission/dashboard-widgets/${roleId}`, {
+      method: 'PUT',
+      body: JSON.stringify(widgetKeys),
+    });
   },
 };

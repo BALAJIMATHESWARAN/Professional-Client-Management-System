@@ -20,9 +20,19 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
 
   // Forgot password state
   const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
-  const [forgotError, setForgotError] = useState<string | null>(null);
   const [forgotLoading, setForgotLoading] = useState(false);
+  const [forgotError, setForgotError] = useState<string | null>(null);
+  const [forgotSuccess, setForgotSuccess] = useState<string | null>(null);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+
+  // OTP Reset password state
+  const [otp, setOtp] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [isPasswordFocused, setIsPasswordFocused] = useState(false);
+
 
   // Dynamic Email Missing Feedback Logic
   const getEmailMissingFeedback = (emailVal: string) => {
@@ -63,6 +73,15 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
 
   const loginEmailFeedback = getEmailMissingFeedback(email);
   const forgotEmailFeedback = getEmailMissingFeedback(forgotEmail);
+
+  // OTP password complexity checks
+  const isLengthValid = newPassword.length >= 8;
+  const hasUpperCase = /[A-Z]/.test(newPassword);
+  const hasLowerCase = /[a-z]/.test(newPassword);
+  const hasNumber = /\d/.test(newPassword);
+  const hasSpecial = /[^a-zA-Z\d]/.test(newPassword);
+  const isConfirmMatching = newPassword === confirmNewPassword && confirmNewPassword.length > 0;
+  const isFormInvalid = !isLengthValid || !hasUpperCase || !hasLowerCase || !hasNumber || !hasSpecial || !isConfirmMatching || otp.trim().length !== 6;
 
 
   // Ref for the live wallpaper interactive canvas
@@ -298,8 +317,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
     }
   };
 
-  const handleForgotSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSendOtp = async () => {
     if (!forgotEmail) {
       setForgotError('Please enter your email address.');
       return;
@@ -311,11 +329,68 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
 
     try {
       const res = await api.forgotPassword(forgotEmail);
-      setForgotSuccess(res.message || 'Password reset link sent to your email.');
+      setForgotSuccess(res.message || 'Verification OTP sent to your email. Please enter it below.');
+      setOtpSent(true);
+    } catch (err: any) {
+      setForgotError(err.message || 'We could not find that email address in our system.');
+      setOtpSent(false);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!otp) {
+      setForgotError('Please enter the 6-digit OTP code.');
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+
+    try {
+      const res = await api.verifyOtp(forgotEmail, otp);
+      setForgotSuccess(res.message || 'OTP verified successfully! Please enter your new password.');
+      setOtpVerified(true);
+    } catch (err: any) {
+      setForgotError(err.message || 'Invalid OTP code. Please check and try again.');
+      setOtpVerified(false);
+    } finally {
+      setForgotLoading(false);
+    }
+  };
+
+  const handleForgotSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otp || !newPassword) {
+      setForgotError('Please fill out all fields.');
+      return;
+    }
+    if (newPassword !== confirmNewPassword) {
+      setForgotError('Passwords do not match.');
+      return;
+    }
+
+    setForgotLoading(true);
+    setForgotError(null);
+    setForgotSuccess(null);
+
+    try {
+      const res = await api.verifyOtpResetPassword(forgotEmail, otp, newPassword);
+      setForgotSuccess(res.message || 'Password reset successfully! Redirecting...');
+      
+      // Clear fields
+      setOtp('');
+      setNewPassword('');
+      setConfirmNewPassword('');
       setForgotEmail('');
+      setOtpSent(false);
+      setOtpVerified(false);
+
       setTimeout(() => {
-        setSuccessMessage(res.message || 'Password reset link sent to your email.');
         setActiveForm('login');
+        setSuccessMessage('Password reset successfully! You can now log in.');
         setForgotSuccess(null);
         // Automatically hide success notification after 5 seconds
         setTimeout(() => {
@@ -323,7 +398,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
         }, 5000);
       }, 2000);
     } catch (err: any) {
-      setForgotError(err.message || 'We could not find that email address in our system.');
+      setForgotError(err.message || 'Failed to verify OTP. Please try again.');
     } finally {
       setForgotLoading(false);
     }
@@ -332,6 +407,55 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
 
   return (
     <div className="login-page-bg">
+      {successMessage && (
+        <div 
+          className="animate-fade-in" 
+          style={{
+            position: 'absolute',
+            top: '24px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            padding: '0.85rem 1.5rem',
+            borderRadius: '12px',
+            backgroundColor: 'rgba(16, 185, 129, 0.95)',
+            backdropFilter: 'blur(10px)',
+            border: '1.5px solid rgba(255, 255, 255, 0.2)',
+            color: '#ffffff',
+            fontWeight: 600,
+            boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.4), 0 10px 10px -5px rgba(0, 0, 0, 0.4)',
+            minWidth: '320px',
+            maxWidth: '90%',
+            justifyContent: 'center'
+          }}
+        >
+          <svg style={{ width: '20px', height: '20px', stroke: '#ffffff', strokeWidth: 3 }} viewBox="0 0 24 24" fill="none" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="20 6 9 17 4 12" />
+          </svg>
+          <span>{successMessage}</span>
+          <button 
+            type="button" 
+            onClick={() => setSuccessMessage(null)} 
+            style={{ 
+              background: 'none', 
+              border: 'none', 
+              color: '#ffffff', 
+              opacity: 0.8,
+              cursor: 'pointer', 
+              marginLeft: 'auto',
+              paddingLeft: '1rem',
+              fontSize: '1rem',
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            ✕
+          </button>
+        </div>
+      )}
       <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 1 }} />
       <div className="noise-overlay" />
 
@@ -360,7 +484,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
 
       {/* Right — 3D glassmorphic login panel */}
       <div className="login-right-panel">
-        {activeForm === 'login' ? (
+        {activeForm === 'login' && (
           <div className="login-glass-card animate-fade-in">
             <div className="login-shield-wrap" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
               <img 
@@ -391,25 +515,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
               </div>
             )}
 
-            {successMessage && (
-              <div className="alert alert-success" style={{
-                padding: '0.75rem 1rem',
-                borderRadius: 'var(--radius-sm)',
-                fontSize: '0.88rem',
-                backgroundColor: 'var(--zoho-green-glow)',
-                color: 'var(--zoho-green)',
-                border: '1px solid rgba(8,153,73,0.2)',
-                marginBottom: '1rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.5rem'
-              }}>
-                <svg style={{ width: '16px', height: '16px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="20 6 9 17 4 12" />
-                </svg>
-                <span style={{ fontWeight: 600 }}>{successMessage}</span>
-              </div>
-            )}
+
 
             <form onSubmit={handleSubmit}>
               <div className="form-group login-input-group">
@@ -429,7 +535,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
               <div className="form-group login-input-group" style={{ position: 'relative' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <label className="form-label" htmlFor="password">Password</label>
-                  <button type="button" onClick={() => setActiveForm('forgot')} className="forgot-password-link">Forgot Password?</button>
+                  <button type="button" onClick={() => { setForgotEmail(email); setActiveForm('forgot'); }} className="forgot-password-link">Forgot Password?</button>
                 </div>
                 <div style={{ position: 'relative', marginTop: '0.25rem' }}>
                   <input id="password" type={showPassword ? 'text' : 'password'} placeholder="Enter your password" className="form-input login-input-3d" style={{ width: '100%', paddingRight: '2.75rem' }} value={password} onChange={(e) => setPassword(e.target.value)} disabled={loading} autoComplete="current-password" required />
@@ -450,8 +556,6 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
 
               </div>
 
-
-
               <button type="submit" className="btn login-btn-3d" style={{ width: '100%', marginTop: '1.5rem', height: '50px' }} disabled={loading || !!(loginEmailFeedback && loginEmailFeedback.status === 'error')}>
                 {loading ? (
                   <div className="spinner" style={{ borderTopColor: '#ffffff' }} />
@@ -468,9 +572,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
 
             <p className="login-card-footer">Secured by PCMS Enterprise &bull; v2.0</p>
           </div>
-        ) : (
+        )}
+
+        {activeForm === 'forgot' && (
           <div className="login-glass-card animate-fade-in">
-            <div className="login-shield-wrap">
+            <div className="login-shield-wrap" style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
               <div className="login-forgot-icon">
                 <svg style={{ width: '30px', height: '30px' }} viewBox="0 0 24 24" fill="none" stroke="#58a6ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" />
@@ -479,8 +585,9 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
             </div>
             <div style={{ textAlign: 'center', marginBottom: '1.5rem' }}>
               <h1 className="login-card-title">Reset Password</h1>
-              <p className="login-card-sub">Enter your email to receive recovery instructions</p>
+              <p className="login-card-sub">Enter your email and request verification OTP</p>
             </div>
+            
             {forgotError && (
               <div className="alert alert-error">
                 <svg style={{ width: '16px', height: '16px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -489,6 +596,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
                 <span>{forgotError}</span>
               </div>
             )}
+            
             {forgotSuccess && (
               <div className="alert alert-success">
                 <svg style={{ width: '16px', height: '16px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -497,10 +605,35 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
                 <span>{forgotSuccess}</span>
               </div>
             )}
+
             <form onSubmit={handleForgotSubmit}>
+              {/* Email Address with Verify Button next to it */}
               <div className="form-group login-input-group">
                 <label className="form-label" htmlFor="forgot-email">Email Address</label>
-                <input id="forgot-email" type="email" placeholder="name@example.com" className="form-input login-input-3d" value={forgotEmail} onChange={(e) => setForgotEmail(e.target.value)} disabled={forgotLoading} required />
+                <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.25rem' }}>
+                  <input
+                    id="forgot-email"
+                    type="email"
+                    placeholder="name@example.com"
+                    className="form-input login-input-3d"
+                    value={forgotEmail}
+                    onChange={(e) => setForgotEmail(e.target.value)}
+                    disabled={forgotLoading || otpSent}
+                    required
+                    style={{ flex: 1 }}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    className="btn login-btn-3d"
+                    style={{ width: '95px', height: '46px', flexShrink: 0, padding: 0 }}
+                    disabled={forgotLoading || !forgotEmail || !!(forgotEmailFeedback && forgotEmailFeedback.status === 'error')}
+                  >
+                    {forgotLoading ? (
+                      <div className="spinner" style={{ width: '16px', height: '16px', borderTopColor: '#ffffff' }} />
+                    ) : otpSent ? 'Resend' : 'Verify'}
+                  </button>
+                </div>
                 {forgotEmailFeedback && (
                   <div style={{ fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.35rem' }}>
                     {forgotEmailFeedback.status === 'error' ? (
@@ -511,10 +644,193 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess, onLoginStart, onLo
                   </div>
                 )}
               </div>
-              <button type="submit" className="btn login-btn-3d" style={{ width: '100%', marginTop: '1rem', height: '50px' }} disabled={forgotLoading || !!(forgotEmailFeedback && forgotEmailFeedback.status === 'error')}>
-                {forgotLoading ? <div className="spinner" style={{ borderTopColor: '#ffffff' }} /> : 'RESET LINK'}
-              </button>
-              <button type="button" className="btn login-btn-secondary-3d" style={{ width: '100%', marginTop: '0.6rem', height: '44px' }} onClick={() => { setActiveForm('login'); setForgotSuccess(null); setForgotError(null); }} disabled={forgotLoading}>
+
+              {/* Conditional sliding section when OTP is sent */}
+              {otpSent && (
+                <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginTop: '1rem' }}>
+                  
+                  {/* OTP Code */}
+                  <div className="form-group login-input-group">
+                    <label className="form-label" htmlFor="otp-code">6-Digit OTP</label>
+                    <div style={{ display: 'flex', gap: '0.6rem', marginTop: '0.25rem' }}>
+                      <input
+                        id="otp-code"
+                        type="text"
+                        maxLength={6}
+                        placeholder="123456"
+                        className="form-input login-input-3d"
+                        value={otp}
+                        onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
+                        disabled={forgotLoading || otpVerified}
+                        required
+                        style={{ flex: 1, textAlign: 'center', letterSpacing: '0.5rem', fontSize: '1.25rem', fontWeight: 'bold' }}
+                      />
+                      {!otpVerified ? (
+                        <button
+                          type="button"
+                          onClick={handleVerifyOtp}
+                          className="btn login-btn-3d"
+                          style={{ width: '95px', height: '46px', flexShrink: 0, padding: 0 }}
+                          disabled={forgotLoading || otp.length !== 6}
+                        >
+                          {forgotLoading ? (
+                            <div className="spinner" style={{ width: '16px', height: '16px', borderTopColor: '#ffffff' }} />
+                          ) : 'Verify'}
+                        </button>
+                      ) : (
+                        <div style={{
+                          width: '95px',
+                          height: '46px',
+                          backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                          border: '1.5px solid rgba(16, 185, 129, 0.3)',
+                          borderRadius: '8px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          color: '#10b981',
+                          flexShrink: 0
+                        }}>
+                          <svg style={{ width: '22px', height: '22px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="20 6 9 17 4 12" />
+                          </svg>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Password reset fields appear ONLY after OTP verification succeeds */}
+                  {otpVerified && (
+                    <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                      {/* New Password */}
+                      <div className="form-group login-input-group" style={{ position: 'relative' }}>
+                        <label className="form-label">New Password</label>
+                        <div style={{ position: 'relative', marginTop: '0.25rem' }}>
+                          <input
+                            type={showNewPassword ? 'text' : 'password'}
+                            placeholder="At least 8 characters"
+                            className="form-input login-input-3d"
+                            style={{ width: '100%', paddingRight: '2.75rem' }}
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
+                            onFocus={() => setIsPasswordFocused(true)}
+                            onBlur={() => setIsPasswordFocused(false)}
+                            required
+                            disabled={forgotLoading}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowNewPassword(!showNewPassword)}
+                            className="show-password-btn"
+                          >
+                            {showNewPassword ? (
+                              <svg style={{ width: '17px', height: '17px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                                <line x1="1" y1="1" x2="23" y2="23" />
+                              </svg>
+                            ) : (
+                              <svg style={{ width: '17px', height: '17px' }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                                <circle cx="12" cy="12" r="3" />
+                              </svg>
+                            )}
+                          </button>
+                        </div>
+                        {isPasswordFocused && (
+                          <div style={{
+                            position: 'absolute',
+                            top: '100%',
+                            left: 0,
+                            right: 0,
+                            zIndex: 100,
+                            fontSize: '0.78rem',
+                            color: '#94a3b8',
+                            padding: '0.6rem 0.75rem',
+                            background: 'rgba(23, 23, 37, 0.98)',
+                            backdropFilter: 'blur(12px)',
+                            border: '1.5px solid rgba(255, 255, 255, 0.15)',
+                            borderRadius: '8px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.35rem',
+                            marginTop: '0.45rem',
+                            boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.6)'
+                          }}>
+                            <div style={{ fontWeight: 600, color: '#ffffff', marginBottom: '0.15rem' }}>Password Requirements:</div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: isLengthValid ? '#10b981' : '#64748b' }}>
+                              <span>{isLengthValid ? '✓' : '•'}</span> <span>At least 8 characters ({newPassword.length}/8)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasUpperCase ? '#10b981' : '#64748b' }}>
+                              <span>{hasUpperCase ? '✓' : '•'}</span> <span>At least one uppercase letter (A-Z)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasLowerCase ? '#10b981' : '#64748b' }}>
+                              <span>{hasLowerCase ? '✓' : '•'}</span> <span>At least one lowercase letter (a-z)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasNumber ? '#10b981' : '#64748b' }}>
+                              <span>{hasNumber ? '✓' : '•'}</span> <span>At least one number (0-9)</span>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', color: hasSpecial ? '#10b981' : '#64748b' }}>
+                              <span>{hasSpecial ? '✓' : '•'}</span> <span>At least one special symbol</span>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Confirm Password */}
+                      <div className="form-group login-input-group" style={{ marginBottom: '0.75rem' }}>
+                        <label className="form-label">Confirm New Password</label>
+                        <input
+                          type={showNewPassword ? 'text' : 'password'}
+                          placeholder="Confirm password"
+                          className="form-input login-input-3d"
+                          value={confirmNewPassword}
+                          onChange={(e) => setConfirmNewPassword(e.target.value)}
+                          required
+                          disabled={forgotLoading}
+                        />
+                        {confirmNewPassword && (
+                          <div style={{ fontSize: '0.78rem', display: 'flex', flexDirection: 'column', gap: '0.25rem', marginTop: '0.35rem' }}>
+                            {isConfirmMatching ? (
+                              <div style={{ color: '#10b981' }}>✓ Passwords match</div>
+                            ) : (
+                              <div style={{ color: 'var(--zoho-red)' }}>✗ Passwords do not match</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Submit Button */}
+                      <button
+                        type="submit"
+                        className="btn login-btn-3d"
+                        style={{ width: '100%', marginTop: '1rem', height: '50px' }}
+                        disabled={forgotLoading || isFormInvalid}
+                      >
+                        {forgotLoading ? (
+                          <div className="spinner" style={{ borderTopColor: '#ffffff' }} />
+                        ) : 'RESET PASSWORD'}
+                      </button>
+                    </div>
+                  )}
+
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="btn login-btn-secondary-3d"
+                style={{ width: '100%', marginTop: '0.8rem', height: '44px' }}
+                onClick={() => {
+                  setActiveForm('login');
+                  setForgotSuccess(null);
+                  setForgotError(null);
+                  setOtpSent(false);
+                  setOtpVerified(false);
+                  setOtp('');
+                  setNewPassword('');
+                  setConfirmNewPassword('');
+                }}
+                disabled={forgotLoading}
+              >
                 ← Back to Login
               </button>
             </form>

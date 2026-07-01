@@ -35,19 +35,26 @@ public class AuthController : ControllerBase
         return Ok(new { Message = "Reset password instructions have been sent to your email address." });
     }
 
+    [HttpPost("reset-password-otp")]
+    public async Task<IActionResult> VerifyOtpResetPassword(VerifyOtpResetPasswordRequestDto request)
+    {
+        await _authService.VerifyOtpAndResetPassword(request);
+        return Ok(new { Message = "Password reset via OTP successful." });
+    }
+
+    [HttpPost("verify-otp")]
+    public async Task<IActionResult> VerifyOtp(VerifyOtpRequestDto request)
+    {
+        var isValid = await _authService.VerifyOtp(request);
+        return Ok(new { Valid = isValid, Message = "OTP code verified successfully." });
+    }
+
     [HttpPost("reset-password")]
     public async Task<IActionResult> ResetPassword(ResetPasswordRequestDto request)
     {
         await _authService.ResetPassword(request);
-        return Ok(new { Message = "Your password has been reset successfully." });
+        return Ok(new { Message = "Password has been reset successfully." });
     }
 
-    [HttpPost("change-password")]
-    [Microsoft.AspNetCore.Authorization.Authorize]
-    public async Task<IActionResult> ChangePassword(ChangePasswordRequestDto request)
-    {
-        var currentUserId = int.Parse(User.FindFirst("UserId")!.Value);
-        await _authService.ChangePassword(request, currentUserId);
-        return Ok(new { Message = "Password changed successfully." });
-    }
+    // Existing endpoints ...
 }

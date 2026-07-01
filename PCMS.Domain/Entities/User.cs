@@ -20,5 +20,17 @@ public class User : BaseEntity
 
     public DateTime? PasswordResetTokenExpiry { get; set; }
 
+    // OTP for password reset (valid for 24 hours)
+    public string? PasswordResetOtp { get; set; }
+    public DateTime? PasswordResetOtpExpiry { get; set; }
+
     public ICollection<UserTenant> UserTenants { get; set; } = new List<UserTenant>();
+
+    public virtual DoctorProfile? DoctorProfile { get; set; }
+    
+    public virtual ReceptionistProfile? ReceptionistProfile { get; set; }
+    
+    public virtual NurseProfile? NurseProfile { get; set; }
+    
+    public virtual ICollection<UserRole> UserRoles { get; set; } = new List<UserRole>();
 }

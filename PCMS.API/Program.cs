@@ -12,6 +12,7 @@ using System.Text;
 using System.Text.Json;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddMemoryCache();
 
 // Controllers
 builder.Services.AddControllers();
@@ -33,6 +34,18 @@ builder.Services.AddScoped<IDynamicFieldRepository, DynamicFieldRepository>();
 builder.Services.AddScoped<IDynamicRecordRepository, DynamicRecordRepository>();
 builder.Services.AddScoped<IAuditLogRepository, PCMS.Infrastructure.Repositories.AuditLogRepository>();
 
+// Healthcare & Permission Repositories
+builder.Services.AddScoped<IDoctorProfileRepository, PCMS.Infrastructure.Repositories.DoctorProfileRepository>();
+builder.Services.AddScoped<IReceptionistProfileRepository, PCMS.Infrastructure.Repositories.ReceptionistProfileRepository>();
+builder.Services.AddScoped<INurseProfileRepository, PCMS.Infrastructure.Repositories.NurseProfileRepository>();
+builder.Services.AddScoped<IPatientRepository, PCMS.Infrastructure.Repositories.PatientRepository>();
+builder.Services.AddScoped<IAppointmentRepository, PCMS.Infrastructure.Repositories.AppointmentRepository>();
+builder.Services.AddScoped<IRoleRepository, PCMS.Infrastructure.Repositories.RoleRepository>();
+builder.Services.AddScoped<IPermissionRepository, PCMS.Infrastructure.Repositories.PermissionRepository>();
+builder.Services.AddScoped<IRolePermissionRepository, PCMS.Infrastructure.Repositories.RolePermissionRepository>();
+builder.Services.AddScoped<IUserRoleRepository, PCMS.Infrastructure.Repositories.UserRoleRepository>();
+builder.Services.AddScoped<IDashboardWidgetConfigurationRepository, PCMS.Infrastructure.Repositories.DashboardWidgetConfigurationRepository>();
+
 // Services
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddScoped<ICurrentUserService, PCMS.Infrastructure.Services.CurrentUserService>();
@@ -43,6 +56,14 @@ builder.Services.AddScoped<IAdminService, AdminService>();
 builder.Services.AddScoped<IPasswordService, PasswordService>();
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IDynamicFormService, DynamicFormService>();
+
+// Healthcare & RolePermission Services
+builder.Services.AddScoped<IDoctorService, PCMS.Application.Services.DoctorService>();
+builder.Services.AddScoped<IReceptionistService, PCMS.Application.Services.ReceptionistService>();
+builder.Services.AddScoped<INurseService, PCMS.Application.Services.NurseService>();
+builder.Services.AddScoped<IPatientService, PCMS.Application.Services.PatientService>();
+builder.Services.AddScoped<IAppointmentService, PCMS.Application.Services.AppointmentService>();
+builder.Services.AddScoped<IRolePermissionService, PCMS.Application.Services.RolePermissionService>();
 builder.Services.AddScoped<IEmailService, PCMS.Infrastructure.Services.EmailService>();
 
 // JWT Authentication
