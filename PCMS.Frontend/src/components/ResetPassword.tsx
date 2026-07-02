@@ -58,10 +58,10 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
         this.vy = (Math.random() - 0.5) * 0.35;
         this.radius = Math.random() * 2 + 1;
         const colors = [
-          'rgba(228, 37, 39, 0.35)',  // Zoho Red glow
-          'rgba(34, 109, 180, 0.35)', // Zoho Blue glow
-          'rgba(8, 153, 73, 0.35)',   // Zoho Green glow
-          'rgba(249, 178, 29, 0.35)'  // Zoho Yellow glow
+          'rgba(250, 204, 21, 0.5)',   // Altezza Yellow
+          'rgba(34, 197, 94, 0.4)',    // Altezza Green
+          'rgba(251, 191, 36, 0.4)',   // Warm amber
+          'rgba(163, 230, 53, 0.35)'   // Lime accent
         ];
         this.color = colors[Math.floor(Math.random() * colors.length)];
       }
@@ -132,9 +132,9 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
     }
 
     const nebulas = [
-      new Nebula('rgba(228, 37, 39, 0.11)', Math.min(width, height) * 0.5),
-      new Nebula('rgba(34, 109, 180, 0.13)', Math.min(width, height) * 0.6),
-      new Nebula('rgba(8, 153, 73, 0.08)', Math.min(width, height) * 0.45)
+      new Nebula('rgba(250, 204, 21, 0.1)', Math.min(width, height) * 0.5),
+      new Nebula('rgba(34, 197, 94, 0.09)', Math.min(width, height) * 0.6),
+      new Nebula('rgba(251, 191, 36, 0.07)', Math.min(width, height) * 0.45)
     ];
 
     let mouse = { x: -1000, y: -1000 };
@@ -265,15 +265,15 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
           <p className="login-brand-sub">One unified platform for Doctors, Advocates &amp; Accountants to manage their clients with intelligence.</p>
           <div className="login-brand-modules">
             <div className="login-brand-module">
-              <span className="login-brand-module-dot" style={{ background: 'var(--zoho-red)' }} />
+              <span className="login-brand-module-dot" style={{ background: 'var(--altezza-accent)' }} />
               <span>Doctors</span>
             </div>
             <div className="login-brand-module">
-              <span className="login-brand-module-dot" style={{ background: 'var(--zoho-blue)' }} />
+              <span className="login-brand-module-dot" style={{ background: '#22c55e' }} />
               <span>Advocates</span>
             </div>
             <div className="login-brand-module">
-              <span className="login-brand-module-dot" style={{ background: 'var(--zoho-green)' }} />
+              <span className="login-brand-module-dot" style={{ background: '#34d399' }} />
               <span>Accountants</span>
             </div>
           </div>
@@ -285,7 +285,7 @@ export const ResetPassword: React.FC<ResetPasswordProps> = ({
         <div className="login-glass-card animate-fade-in">
           <div className="login-shield-wrap">
             <div className="login-forgot-icon">
-              <svg style={{ width: '30px', height: '30px' }} viewBox="0 0 24 24" fill="none" stroke="#58a6ff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <svg style={{ width: '30px', height: '30px' }} viewBox="0 0 24 24" fill="none" stroke="#facc15" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <rect x="3" y="11" width="18" height="11" rx="2" ry="2" /><path d="M7 11V7a5 5 0 0 1 9.9-1" />
               </svg>
             </div>

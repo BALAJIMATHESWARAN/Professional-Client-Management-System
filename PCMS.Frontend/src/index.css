@@ -8,7 +8,7 @@ html {
   --font-heading: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 
-  /* Zoho Color Palette */
+  /* Zoho Color Palette (kept for badge/status compatibility) */
   --zoho-blue: #226DB4;
   --zoho-blue-hover: #1a5892;
   --zoho-blue-glow: rgba(34, 109, 180, 0.15);
@@ -25,10 +25,21 @@ html {
   --zoho-yellow-hover: #e09f16;
   --zoho-yellow-glow: rgba(249, 178, 29, 0.1);
 
+  /* ── Altezza Travel Theme Palette ── */
+  --altezza-sidebar: #232d30;
+  --altezza-sidebar-border: rgba(255, 255, 255, 0.08);
+  --altezza-accent: #facc15;
+  --altezza-accent-hover: #eab308;
+  --altezza-accent-text: #1e293b;
+  --altezza-accent-glow: rgba(250, 204, 21, 0.28);
+  --altezza-pill-active-bg: #facc15;
+  --altezza-pill-active-color: #1e293b;
+  --altezza-card-hover-shadow: 0 4px 20px rgba(250, 204, 21, 0.12);
+
   /* Neutrals for Premium SaaS Light Theme */
-  --bg-primary: #f5f8fa;
+  --bg-primary: #f3f4f6;
   --bg-secondary: #ffffff;
-  --bg-tertiary: #ebf1f5;
+  --bg-tertiary: #e9edf0;
 
   --surface-card: #ffffff;
   --border-color: #dbe3eb;
@@ -46,6 +57,7 @@ html {
   --shadow-glow-blue: 0 0 20px rgba(34, 109, 180, 0.2);
   --shadow-glow-red: 0 0 20px rgba(228, 37, 39, 0.2);
   --shadow-glow-green: 0 0 20px rgba(8, 153, 73, 0.2);
+  --shadow-glow-yellow: 0 0 20px rgba(250, 204, 21, 0.25);
 
   /* Radii */
   --radius-sm: 6px;
@@ -602,10 +614,13 @@ tbody tr:hover td {
 /* ============================
    SIDEBAR ACCENT
    ============================ */
+/* ── Altezza Travel Sidebar ── */
 .sidebar-zoho-gradient {
   position: relative;
+  background-color: var(--altezza-sidebar) !important;
 }
 
+/* Decorative right edge stripe in Altezza yellow-green */
 .sidebar-zoho-gradient::after {
   content: '';
   position: absolute;
@@ -613,14 +628,15 @@ tbody tr:hover td {
   right: 0;
   bottom: 0;
   width: 3px;
-  background: linear-gradient(180deg, var(--zoho-red) 0%, var(--zoho-green) 33%, var(--zoho-blue) 66%, var(--zoho-yellow) 100%);
+  background: linear-gradient(180deg, #facc15 0%, #22c55e 50%, #facc15 100%);
+  opacity: 0.7;
   z-index: 10;
 }
 
-/* Sidebar button hover glow */
+/* Sidebar button hover — warm yellow tint */
 .sidebar-zoho-gradient button:hover {
-  background: rgba(255, 255, 255, 0.06) !important;
-  color: #ffffff !important;
+  background: rgba(250, 204, 21, 0.08) !important;
+  color: #facc15 !important;
 }
 
 /* ============================
@@ -1456,7 +1472,7 @@ button[title] {
   align-items: stretch;
   justify-content: space-between;
   overflow: hidden;
-  background: linear-gradient(135deg, #02040a 0%, #081125 50%, #02040a 100%);
+  background: linear-gradient(135deg, #09120e 0%, #0d1f1a 50%, #09120e 100%);
 }
 
 /* Subtle textured noise/grain overlay for a premium film look */
@@ -1484,14 +1500,14 @@ button[title] {
 }
 
 .login-raycast-slash-1 {
-  background: linear-gradient(to bottom, rgba(228, 37, 39, 0.35) 0%, rgba(228, 37, 39, 0.15) 30%, rgba(228, 37, 39, 0) 70%);
+  background: linear-gradient(to bottom, rgba(250, 204, 21, 0.3) 0%, rgba(250, 204, 21, 0.1) 30%, rgba(250, 204, 21, 0) 70%);
   left: 20%;
   top: -65%;
   animation: slash-float-1 18s ease-in-out infinite alternate;
 }
 
 .login-raycast-slash-2 {
-  background: linear-gradient(to bottom, rgba(34, 109, 180, 0.32) 0%, rgba(34, 109, 180, 0.12) 30%, rgba(34, 109, 180, 0) 70%);
+  background: linear-gradient(to bottom, rgba(34, 197, 94, 0.25) 0%, rgba(34, 197, 94, 0.08) 30%, rgba(34, 197, 94, 0) 70%);
   left: 45%;
   top: -50%;
   width: 200px;
@@ -1499,7 +1515,7 @@ button[title] {
 }
 
 .login-raycast-slash-3 {
-  background: linear-gradient(to bottom, rgba(228, 37, 39, 0.28) 0%, rgba(228, 37, 39, 0.08) 35%, rgba(228, 37, 39, 0) 75%);
+  background: linear-gradient(to bottom, rgba(250, 204, 21, 0.22) 0%, rgba(250, 204, 21, 0.06) 35%, rgba(250, 204, 21, 0) 75%);
   left: 70%;
   top: -75%;
   width: 120px;
@@ -1563,7 +1579,7 @@ button[title] {
   border-radius: var(--radius-md) !important;
   box-shadow:
     0 25px 60px -15px rgba(0, 0, 0, 0.7),
-    0 0 50px rgba(34, 109, 180, 0.08),
+    0 0 50px rgba(250, 204, 21, 0.07),
     inset 0 1px 0 rgba(255, 255, 255, 0.05) !important;
   backdrop-filter: blur(25px) !important;
   -webkit-backdrop-filter: blur(25px) !important;
@@ -1578,7 +1594,7 @@ button[title] {
   border-color: rgba(255, 255, 255, 0.14) !important;
   box-shadow:
     0 30px 70px -12px rgba(0, 0, 0, 0.8),
-    0 0 60px rgba(228, 37, 39, 0.12),
+    0 0 60px rgba(250, 204, 21, 0.1),
     inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -1607,8 +1623,8 @@ button[title] {
 
 .login-glass-card input.form-input:focus {
   background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(34, 109, 180, 0.8) !important;
-  box-shadow: 0 0 0 3px rgba(34, 109, 180, 0.25) !important;
+  border-color: rgba(250, 204, 21, 0.7) !important;
+  box-shadow: 0 0 0 3px rgba(250, 204, 21, 0.18) !important;
 }
 
 .login-glass-card input.form-input::placeholder {
@@ -1617,16 +1633,16 @@ button[title] {
 
 /* Custom premium buttons inside glass card */
 .login-glass-card .btn-primary {
-  background: linear-gradient(135deg, var(--zoho-blue) 0%, var(--zoho-blue-hover) 100%) !important;
-  color: #ffffff !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
-  box-shadow: 0 4px 20px rgba(34, 109, 180, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  background: linear-gradient(135deg, #facc15 0%, #eab308 100%) !important;
+  color: #1e293b !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 4px 20px rgba(250, 204, 21, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2) !important;
   transition: all var(--transition-normal) !important;
 }
 
 .login-glass-card .btn-primary:hover {
   transform: translateY(-2px) !important;
-  box-shadow: 0 8px 25px rgba(34, 109, 180, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.25) !important;
+  box-shadow: 0 8px 25px rgba(250, 204, 21, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
 }
 
 .login-glass-card .btn-primary:active {
@@ -1667,7 +1683,7 @@ button[title] {
 }
 
 .login-glass-card .forgot-password-link {
-  color: #58a6ff !important;
+  color: #facc15 !important;
   background: none !important;
   border: none !important;
   font-size: 0.8rem !important;
@@ -1679,7 +1695,7 @@ button[title] {
 }
 
 .login-glass-card .forgot-password-link:hover {
-  color: #79c0ff !important;
+  color: #fde047 !important;
   text-decoration: underline !important;
 }
 
@@ -1752,9 +1768,9 @@ button[title] {
 
 .login-brand-badge {
   display: inline-block;
-  background: rgba(34, 109, 180, 0.2);
-  border: 1px solid rgba(34, 109, 180, 0.4);
-  color: #58a6ff;
+  background: rgba(250, 204, 21, 0.15);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  color: #facc15;
   font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.15em;
@@ -2254,32 +2270,34 @@ body.dark-mode .role-restriction-banner {
 .reg-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(15, 23, 42, 0.4);
+  background: rgba(15, 23, 42, 0.5);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   z-index: 1000;
   display: flex;
-  justify-content: flex-end;
-  align-items: stretch;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
   animation: overlayFadeIn 0.2s ease forwards;
 }
 
 .reg-modal {
   position: relative;
   width: 100%;
-  max-width: 520px;
-  height: 100vh;
+  max-width: 620px;
+  max-height: 90vh;
   background: #ffffff;
-  border-left: 1px solid #e5eaf2;
-  box-shadow: -10px 0 45px rgba(15, 23, 42, 0.15);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--shadow-premium);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: drawerSlideIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: scaleIn 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
 
 .reg-modal-wide {
-  max-width: 580px;
+  max-width: 900px;
 }
 
 /* Top accent bar */
@@ -2553,6 +2571,21 @@ body.dark-mode .reg-whatsapp-box {
 @media (min-width: 900px) {
   .settings-split-layout {
     grid-template-columns: 280px 1fr !important;
+  }
+}
+
+/* Responsive styles for centered popups */
+@media (max-width: 768px) {
+  .reg-modal-overlay {
+    padding: 1rem;
+  }
+  .reg-modal {
+    max-height: 95vh;
+    border-radius: var(--radius-md);
+  }
+  .reg-form-grid-2 {
+    grid-template-columns: 1fr !important;
+    gap: 0.8rem !important;
   }
 }
 

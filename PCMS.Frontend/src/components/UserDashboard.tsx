@@ -736,11 +736,10 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
       {/* 1. SIDEBAR WRAPPER with floating arrow button */}
       <div style={{ position: 'relative', display: 'flex', flexShrink: 0 }}>
         <aside
-          className="sidebar-zoho-gradient"
           style={{
             width: sidebarCollapsed ? '72px' : '190px',
-            backgroundColor: '#182238',
-            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: '#232d30',
+            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             flexDirection: 'column',
             padding: '1.75rem 0',
@@ -795,14 +794,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              fontWeight: 500,
               fontFamily: 'var(--font-heading)',
               fontSize: '0.9rem',
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              backgroundColor: activeTab === 'modules' && !activeModule ? 'var(--zoho-red)' : 'transparent',
-              color: activeTab === 'modules' && !activeModule ? '#ffffff' : '#94a3b8',
-              boxShadow: activeTab === 'modules' && !activeModule ? '0 3px 8px rgba(228, 37, 39, 0.25)' : 'none'
+              backgroundColor: activeTab === 'modules' && !activeModule ? '#facc15' : 'transparent',
+              color: activeTab === 'modules' && !activeModule ? '#1e293b' : '#94a3b8',
+              boxShadow: activeTab === 'modules' && !activeModule ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+              fontWeight: activeTab === 'modules' && !activeModule ? 700 : 500
             }}
           >
             <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -848,14 +847,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                   border: 'none',
                   borderRadius: 'var(--radius-sm)',
                   cursor: 'pointer',
-                  fontWeight: 500,
                   fontFamily: 'var(--font-heading)',
                   fontSize: '0.9rem',
                   textAlign: 'left',
                   transition: 'all 0.15s ease',
-                  backgroundColor: activeTab === 'modules' && activeModule && workspaceTab === 'records' ? activeTheme.color : 'transparent',
-                  color: activeTab === 'modules' && activeModule && workspaceTab === 'records' ? '#ffffff' : '#94a3b8',
-                  boxShadow: activeTab === 'modules' && activeModule && workspaceTab === 'records' ? `0 3px 8px ${activeTheme.color}40` : 'none',
+                  backgroundColor: activeTab === 'modules' && activeModule && workspaceTab === 'records' ? '#facc15' : 'transparent',
+                  color: activeTab === 'modules' && activeModule && workspaceTab === 'records' ? '#1e293b' : '#94a3b8',
+                  boxShadow: activeTab === 'modules' && activeModule && workspaceTab === 'records' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+                  fontWeight: activeTab === 'modules' && activeModule && workspaceTab === 'records' ? 700 : 500,
                   paddingLeft: sidebarCollapsed ? '0.85rem' : '1.25rem'
                 }}
               >
@@ -882,14 +881,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                     border: 'none',
                     borderRadius: 'var(--radius-sm)',
                     cursor: 'pointer',
-                    fontWeight: 500,
                     fontFamily: 'var(--font-heading)',
                     fontSize: '0.9rem',
                     textAlign: 'left',
                     transition: 'all 0.15s ease',
-                    backgroundColor: activeTab === 'modules' && activeModule && workspaceTab === 'fields' ? activeTheme.color : 'transparent',
-                    color: activeTab === 'modules' && activeModule && workspaceTab === 'fields' ? '#ffffff' : '#94a3b8',
-                    boxShadow: activeTab === 'modules' && activeModule && workspaceTab === 'fields' ? `0 3px 8px ${activeTheme.color}40` : 'none',
+                    backgroundColor: activeTab === 'modules' && activeModule && workspaceTab === 'fields' ? '#facc15' : 'transparent',
+                    color: activeTab === 'modules' && activeModule && workspaceTab === 'fields' ? '#1e293b' : '#94a3b8',
+                    boxShadow: activeTab === 'modules' && activeModule && workspaceTab === 'fields' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+                    fontWeight: activeTab === 'modules' && activeModule && workspaceTab === 'fields' ? 700 : 500,
                     paddingLeft: sidebarCollapsed ? '0.85rem' : '1.25rem'
                   }}
                 >
@@ -924,14 +923,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
                 border: 'none',
                 borderRadius: 'var(--radius-sm)',
                 cursor: 'pointer',
-                fontWeight: 500,
                 fontFamily: 'var(--font-heading)',
                 fontSize: '0.9rem',
                 textAlign: 'left',
                 transition: 'all 0.15s ease',
-                backgroundColor: activeTab === 'auditLogs' ? 'var(--zoho-blue)' : 'transparent',
-                color: activeTab === 'auditLogs' ? '#ffffff' : '#94a3b8',
-                boxShadow: activeTab === 'auditLogs' ? '0 3px 8px rgba(34, 109, 180, 0.25)' : 'none'
+                backgroundColor: activeTab === 'auditLogs' ? '#facc15' : 'transparent',
+                color: activeTab === 'auditLogs' ? '#1e293b' : '#94a3b8',
+                boxShadow: activeTab === 'auditLogs' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+                fontWeight: activeTab === 'auditLogs' ? 700 : 500
               }}
             >
               <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -958,14 +957,14 @@ export const UserDashboard: React.FC<UserDashboardProps> = ({
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              fontWeight: 500,
               fontFamily: 'var(--font-heading)',
               fontSize: '0.9rem',
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              backgroundColor: activeTab === 'settings' ? 'var(--zoho-yellow)' : 'transparent',
-              color: activeTab === 'settings' ? '#ffffff' : '#94a3b8',
-              boxShadow: activeTab === 'settings' ? '0 3px 8px rgba(249, 178, 29, 0.25)' : 'none'
+              backgroundColor: activeTab === 'settings' ? '#facc15' : 'transparent',
+              color: activeTab === 'settings' ? '#1e293b' : '#94a3b8',
+              boxShadow: activeTab === 'settings' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+              fontWeight: activeTab === 'settings' ? 700 : 500
             }}
           >
             <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">

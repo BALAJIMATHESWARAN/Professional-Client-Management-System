@@ -645,8 +645,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           className="sidebar-zoho-gradient"
           style={{
             width: sidebarCollapsed ? '72px' : '190px',
-            backgroundColor: '#182238',
-            borderRight: '1px solid rgba(255, 255, 255, 0.1)',
+            backgroundColor: '#232d30',
+            borderRight: '1px solid rgba(255, 255, 255, 0.08)',
             display: 'flex',
             flexDirection: 'column',
             padding: '1.75rem 0',
@@ -701,14 +701,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              fontWeight: 500,
               fontFamily: 'var(--font-heading)',
               fontSize: '0.9rem',
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              backgroundColor: activeTab === 'dashboard' ? 'var(--zoho-red)' : 'transparent',
-              color: activeTab === 'dashboard' ? '#ffffff' : '#94a3b8',
-              boxShadow: activeTab === 'dashboard' ? '0 3px 8px rgba(228, 37, 39, 0.25)' : 'none'
+              backgroundColor: activeTab === 'dashboard' ? '#facc15' : 'transparent',
+              color: activeTab === 'dashboard' ? '#1e293b' : '#94a3b8',
+              boxShadow: activeTab === 'dashboard' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+              fontWeight: activeTab === 'dashboard' ? 700 : 500
             }}
           >
             <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -733,14 +733,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              fontWeight: 500,
               fontFamily: 'var(--font-heading)',
               fontSize: '0.9rem',
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              backgroundColor: activeTab === 'tenants' ? 'var(--zoho-green)' : 'transparent',
-              color: activeTab === 'tenants' ? '#ffffff' : '#94a3b8',
-              boxShadow: activeTab === 'tenants' ? '0 3px 8px rgba(8, 153, 73, 0.25)' : 'none'
+              backgroundColor: activeTab === 'tenants' ? '#facc15' : 'transparent',
+              color: activeTab === 'tenants' ? '#1e293b' : '#94a3b8',
+              boxShadow: activeTab === 'tenants' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+              fontWeight: activeTab === 'tenants' ? 700 : 500
             }}
           >
             <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -766,14 +766,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              fontWeight: 500,
               fontFamily: 'var(--font-heading)',
               fontSize: '0.9rem',
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              backgroundColor: activeTab === 'admins' ? 'var(--zoho-blue)' : 'transparent',
-              color: activeTab === 'admins' ? '#ffffff' : '#94a3b8',
-              boxShadow: activeTab === 'admins' ? '0 3px 8px rgba(34, 109, 180, 0.25)' : 'none'
+              backgroundColor: activeTab === 'admins' ? '#facc15' : 'transparent',
+              color: activeTab === 'admins' ? '#1e293b' : '#94a3b8',
+              boxShadow: activeTab === 'admins' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+              fontWeight: activeTab === 'admins' ? 700 : 500
             }}
           >
             <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -798,14 +798,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              fontWeight: 500,
               fontFamily: 'var(--font-heading)',
               fontSize: '0.9rem',
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              backgroundColor: activeTab === 'auditLogs' ? 'var(--zoho-blue)' : 'transparent',
-              color: activeTab === 'auditLogs' ? '#ffffff' : '#94a3b8',
-              boxShadow: activeTab === 'auditLogs' ? '0 3px 8px rgba(34, 109, 180, 0.25)' : 'none'
+              backgroundColor: activeTab === 'auditLogs' ? '#facc15' : 'transparent',
+              color: activeTab === 'auditLogs' ? '#1e293b' : '#94a3b8',
+              boxShadow: activeTab === 'auditLogs' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+              fontWeight: activeTab === 'auditLogs' ? 700 : 500
             }}
           >
             <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -831,14 +831,14 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
               border: 'none',
               borderRadius: 'var(--radius-sm)',
               cursor: 'pointer',
-              fontWeight: 500,
               fontFamily: 'var(--font-heading)',
               fontSize: '0.9rem',
               textAlign: 'left',
               transition: 'all 0.15s ease',
-              backgroundColor: activeTab === 'settings' ? 'var(--zoho-yellow)' : 'transparent',
-              color: activeTab === 'settings' ? '#ffffff' : '#94a3b8',
-              boxShadow: activeTab === 'settings' ? '0 3px 8px rgba(249, 178, 29, 0.25)' : 'none'
+              backgroundColor: activeTab === 'settings' ? '#facc15' : 'transparent',
+              color: activeTab === 'settings' ? '#1e293b' : '#94a3b8',
+              boxShadow: activeTab === 'settings' ? '0 3px 8px rgba(250, 204, 21, 0.3)' : 'none',
+              fontWeight: activeTab === 'settings' ? 700 : 500
             }}
           >
             <svg style={{ width: '18px', height: '18px', flexShrink: 0 }} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
@@ -865,8 +865,8 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
                 width: '36px',
                 height: '36px',
                 borderRadius: '50%',
-                background: 'var(--zoho-blue)',
-                color: '#ffffff',
+                background: '#facc15',
+                color: '#1e293b',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -931,7 +931,7 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           width: '24px',
           height: '24px',
           borderRadius: '50%',
-          backgroundColor: '#182238',
+          backgroundColor: '#232d30',
           border: '1px solid rgba(255, 255, 255, 0.2)',
           color: '#ffffff',
           display: 'flex',
@@ -943,12 +943,12 @@ export const SuperAdminDashboard: React.FC<SuperAdminDashboardProps> = ({
           padding: 0
         }}
         onMouseEnter={(e) => {
-          e.currentTarget.style.backgroundColor = 'var(--zoho-blue)';
-          e.currentTarget.style.transform = 'scale(1.1)';
+          e.currentTarget.style.backgroundColor = '#facc15';
+          e.currentTarget.style.color = '#1e293b';
         }}
         onMouseLeave={(e) => {
-          e.currentTarget.style.backgroundColor = '#182238';
-          e.currentTarget.style.transform = 'scale(1)';
+          e.currentTarget.style.backgroundColor = '#232d30';
+          e.currentTarget.style.color = '#ffffff';
         }}
       >
         {sidebarCollapsed ? (

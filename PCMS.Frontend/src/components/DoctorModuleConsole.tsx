@@ -194,6 +194,7 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
   });
   const [receptionists, setReceptionists] = useState<any[]>([]);
   const [nurses, setNurses]             = useState<any[]>([]);
+  const [activeActionMenu, setActiveActionMenu] = useState<{ type: string; id: number } | null>(null);
   const [isStaffDrawerOpen, setIsStaffDrawerOpen] = useState(() => {
     return localStorage.getItem('pcms_staff_drawer_open') === 'true';
   });
@@ -668,20 +669,64 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
         paddingTop: '1.25rem',
         marginTop: '-1.5rem',
       }}>
-        <div style={{ display: 'flex', gap: '0.25rem', overflowX: 'auto' }}>
-          {NAV_TABS.filter(t => t.always).map(t => (
-            <button
-              key={t.key}
-              onClick={() => setSubView(t.key as SubView)}
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                padding: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 600,
-                borderBottom: subView === t.key ? `2px solid ${themeColor}` : '2px solid transparent',
-                color: subView === t.key ? themeColor : 'var(--text-secondary)',
-                marginBottom: '-2px', transition: 'all 0.15s ease', whiteSpace: 'nowrap',
-              }}
-            >{t.label}</button>
-          ))}
+        <div style={{
+          display: 'inline-flex',
+          gap: '6px',
+          overflowX: 'auto',
+          backgroundColor: '#f1f5f9',
+          padding: '6px',
+          borderRadius: '10px',
+          border: '1px solid #e2e8f0'
+        }}>
+          {NAV_TABS.filter(t => t.always).map(t => {
+            const isTabActive = subView === t.key;
+            const cleanLabel = t.label.replace(/[\u2700-\u27BF]|[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD00-\uDFFF]/g, '').trim();
+            
+            let badgeVal = null;
+            if (t.key === 'doctors') badgeVal = doctors.length;
+            else if (t.key === 'staff') badgeVal = receptionists.length + nurses.length;
+            else if (t.key === 'patients') badgeVal = patTotalCount;
+            else if (t.key === 'appointments') badgeVal = appointments.length;
+
+            return (
+              <button
+                key={t.key}
+                onClick={() => setSubView(t.key as SubView)}
+                style={{
+                  background: isTabActive ? '#ffffff' : 'none',
+                  border: isTabActive ? '1px solid #cbd5e1' : '1px solid transparent',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  padding: '0.45rem 0.9rem',
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  boxShadow: isTabActive ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+                  color: isTabActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  transition: 'all 0.15s ease',
+                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.35rem'
+                }}
+              >
+                <span>{cleanLabel}</span>
+                {badgeVal !== null && (
+                  <span
+                    style={{
+                      padding: '0.15rem 0.35rem',
+                      borderRadius: '4px',
+                      fontSize: '0.72rem',
+                      fontWeight: 700,
+                      backgroundColor: isTabActive ? '#22c55e' : '#cbd5e1',
+                      color: isTabActive ? '#ffffff' : '#475569'
+                    }}
+                  >
+                    {badgeVal}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
 
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
@@ -793,82 +838,165 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
             )}
           </div>
 
-          <div className="saas-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="saas-table text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr>
-                    <th>Code</th><th>Doctor Name</th><th>Specialization</th>
-                    <th>Qualification</th><th>Experience</th><th>Fee</th>
-                    <th>Phone</th><th>Status</th>
-                    {canRegisterDoctor && <th style={{ textAlign: 'center' }}>Actions</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {doctors.length === 0
-                    ? <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No doctors found. {canRegisterDoctor ? 'Register one to get started.' : ''}</td></tr>
-                    : doctors.map(d => (
-                      <tr key={d.id}>
-                        <td><code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>{d.doctorCode}</code></td>
-                        <td>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 700 }}>Dr. {d.userName}</span>
-                            {d.verificationStatus === 'Approved' ? (
-                              <span title="Verified Credentials" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#e1f5fe', color: '#0288d1', borderRadius: '3px', fontWeight: 600 }}>Verified ✓</span>
-                            ) : d.verificationStatus === 'Rejected' ? (
-                              <span title="Verification Rejected" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#ffebee', color: '#c62828', borderRadius: '3px', fontWeight: 600 }}>Rejected</span>
-                            ) : (
-                              <span title="Verification Pending" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#fff8e1', color: '#f57f17', borderRadius: '3px', fontWeight: 600 }}>Pending</span>
-                            )}
-                          </div>
-                          {d.fullLegalName && (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-                              Legal Name: <strong>{d.fullLegalName}</strong>
-                            </div>
-                          )}
-                          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.email}</div>
-                          {d.registrationNumber && (
-                            <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
-                              Reg: <strong>{d.registrationNumber}</strong> ({d.medicalCouncil})
-                            </div>
-                          )}
-                          {d.customFields && Object.keys(d.customFields).length > 0 && (
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.25rem' }}>
-                              {Object.entries(d.customFields).map(([key, value]) => (
-                                <span key={key} style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem', backgroundColor: 'var(--bg-secondary)', borderRadius: '3px', color: 'var(--text-secondary)' }}>
-                                  <strong>{key}:</strong> {String(value)}
-                                </span>
-                              ))}
-                            </div>
-                          )}
-                        </td>
-                        <td><span className="badge badge-info">{d.specialization}</span></td>
-                        <td style={{ fontSize: '0.85rem' }}>{d.qualification || '—'}</td>
-                        <td style={{ fontSize: '0.85rem' }}>{d.experienceYears} yrs</td>
-                        <td style={{ fontWeight: 700 }}>₹{Number(d.consultationFee).toLocaleString()}</td>
-                        <td style={{ fontSize: '0.85rem' }}>
-                          <div>Phone: {d.phoneNumber || '—'}</div>
-                          {d.mobileNumber && <div style={{ marginTop: '0.15rem' }}>Mobile: {d.mobileNumber}</div>}
-                        </td>
-                        <td>{statusBadge(d.status)}</td>
-                        {canRegisterDoctor && (
-                          <td>
-                            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
-                              <button onClick={() => openDocEdit(d)} className="btn btn-secondary"
-                                style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)' }}>Edit</button>
-                              <button onClick={() => withFeedback(() => api.toggleDoctorStatus(d.id).then(() => loadDoctors()), 'Status updated.')}
-                                className="btn btn-secondary"
-                                style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)',
-                                  color: d.status === 'Active' ? 'var(--zoho-red)' : 'var(--zoho-green)' }}>
-                                {d.status === 'Active' ? 'Deactivate' : 'Activate'}
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <div style={{ minWidth: '1000px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              
+              {/* Header block */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '100px 2.2fr 1.2fr 1fr 100px 100px 1.5fr 100px 60px',
+                gap: '1rem',
+                padding: '0.75rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                <div>Code</div>
+                <div>Doctor Name</div>
+                <div>Specialization</div>
+                <div>Qualification</div>
+                <div>Experience</div>
+                <div>Fee</div>
+                <div>Contact</div>
+                <div>Status</div>
+                <div style={{ textAlign: 'center' }}>Actions</div>
+              </div>
+
+              {doctors.length === 0 ? (
+                <div className="saas-card" style={{ padding: '3rem', textAlign: 'center', backgroundColor: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>No doctors found. {canRegisterDoctor ? 'Register one to get started.' : ''}</span>
+                </div>
+              ) : (
+                doctors.map(d => (
+                  <div
+                    key={d.id}
+                    className="saas-card animate-fade-in"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: '100px 2.2fr 1.2fr 1fr 100px 100px 1.5fr 100px 60px',
+                      gap: '1rem',
+                      alignItems: 'center',
+                      padding: '1.25rem',
+                      backgroundColor: '#ffffff',
+                      border: '1px solid var(--border-color)',
+                      borderRadius: '10px',
+                      boxShadow: 'var(--shadow-sm)',
+                      position: 'relative'
+                    }}
+                  >
+                    <div>
+                      <code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px', color: 'var(--text-primary)' }}>
+                        {d.doctorCode}
+                      </code>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>Dr. {d.userName}</span>
+                        {d.verificationStatus === 'Approved' ? (
+                          <span title="Verified Credentials" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#e8f5e9', color: '#2e7d32', borderRadius: '3px', fontWeight: 600 }}>Verified ✓</span>
+                        ) : d.verificationStatus === 'Rejected' ? (
+                          <span title="Verification Rejected" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#ffebee', color: '#c62828', borderRadius: '3px', fontWeight: 600 }}>Rejected</span>
+                        ) : (
+                          <span title="Verification Pending" style={{ fontSize: '0.7rem', padding: '0.1rem 0.35rem', background: '#fff8e1', color: '#f57f17', borderRadius: '3px', fontWeight: 600 }}>Pending</span>
+                        )}
+                      </div>
+                      {d.fullLegalName && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.1rem' }}>
+                          Legal Name: <strong>{d.fullLegalName}</strong>
+                        </div>
+                      )}
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{d.email}</div>
+                      {d.registrationNumber && (
+                        <div style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginTop: '0.2rem' }}>
+                          Reg: <strong>{d.registrationNumber}</strong> ({d.medicalCouncil})
+                        </div>
+                      )}
+                      {d.customFields && Object.keys(d.customFields).length > 0 && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.2rem', marginTop: '0.25rem' }}>
+                          {Object.entries(d.customFields).map(([key, value]) => (
+                            <span key={key} style={{ fontSize: '0.7rem', padding: '0.1rem 0.3rem', backgroundColor: 'var(--bg-primary)', borderRadius: '3px', color: 'var(--text-secondary)' }}>
+                              <strong>{key}:</strong> {String(value)}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    <div>
+                      <span className="badge badge-info">{d.specialization}</span>
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-primary)', fontWeight: 500 }}>
+                      {d.qualification || '—'}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      {d.experienceYears} yrs
+                    </div>
+                    <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>
+                      ₹{Number(d.consultationFee).toLocaleString()}
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                      <div>Phone: {d.phoneNumber || '—'}</div>
+                      {d.mobileNumber && <div style={{ marginTop: '0.15rem' }}>Mobile: {d.mobileNumber}</div>}
+                    </div>
+                    <div>{statusBadge(d.status)}</div>
+                    <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                      {canRegisterDoctor ? (
+                        <>
+                          <button
+                            onClick={() => setActiveActionMenu(activeActionMenu?.type === 'doctor' && activeActionMenu?.id === d.id ? null : { type: 'doctor', id: d.id })}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--text-secondary)', padding: '0.25rem', fontWeight: 'bold' }}
+                          >
+                            ⋮
+                          </button>
+                          {activeActionMenu?.type === 'doctor' && activeActionMenu?.id === d.id && (
+                            <div style={{
+                              position: 'absolute',
+                              right: '24px',
+                              top: '-10px',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              boxShadow: 'var(--shadow-md)',
+                              zIndex: 100,
+                              minWidth: '120px',
+                              padding: '0.4rem 0',
+                              display: 'flex',
+                              flexDirection: 'column'
+                            }}>
+                              <button
+                                onClick={() => { openDocEdit(d); setActiveActionMenu(null); }}
+                                style={{ width: '100%', padding: '0.5rem 1rem', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 600 }}
+                              >
+                                📝 Edit Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  withFeedback(() => api.toggleDoctorStatus(d.id).then(() => loadDoctors()), 'Status updated.');
+                                  setActiveActionMenu(null);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.5rem 1rem',
+                                  border: 'none',
+                                  background: 'none',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '0.8rem',
+                                  color: d.status === 'Active' ? 'var(--zoho-red)' : 'var(--zoho-green)',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {d.status === 'Active' ? '🚫 Deactivate' : '✅ Activate'}
                               </button>
                             </div>
-                          </td>
-                        )}
-                      </tr>
-                    ))}
-                </tbody>
-              </table>
+                          )}
+                        </>
+                      ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -900,43 +1028,123 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                 </button>
               </div>
 
-              <div className="saas-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="saas-table text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr><th>Code</th><th>Name</th><th>Email</th><th>Department</th><th>Phone</th><th>Assigned Doctor</th><th>Status</th><th style={{ textAlign: 'center' }}>Actions</th></tr>
-                    </thead>
-                    <tbody>
-                      {(staffTab === 'receptionist' ? receptionists : nurses).length === 0
-                        ? <tr><td colSpan={8} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No records. Register one to get started.</td></tr>
-                        : (staffTab === 'receptionist' ? receptionists : nurses).map((s: any) => (
-                          <tr key={s.id}>
-                            <td><code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>{s.employeeCode}</code></td>
-                            <td><div style={{ fontWeight: 700 }}>{s.userName}</div></td>
-                            <td style={{ fontSize: '0.85rem' }}>{s.email}</td>
-                            <td style={{ fontSize: '0.85rem' }}>{s.department || '—'}</td>
-                            <td style={{ fontSize: '0.85rem' }}>{s.phoneNumber || '—'}</td>
-                            <td style={{ fontSize: '0.85rem', fontWeight: 600, color: s.doctorName ? 'var(--text-primary)' : 'var(--text-muted)' }}>{s.doctorName ? `🩺 ${s.doctorName}` : 'All Doctors'}</td>
-                            <td>{statusBadge(s.status)}</td>
-                            <td>
-                              <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
-                                <button onClick={() => openStaffEdit(s)} className="btn btn-secondary"
-                                  style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)' }}>Edit</button>
-                                <button onClick={() => withFeedback(async () => {
-                                  if (staffTab === 'receptionist') await api.toggleReceptionistStatus(s.id);
-                                  else await api.toggleNurseStatus(s.id);
-                                  await loadStaff();
-                                }, 'Status updated.')} className="btn btn-secondary"
-                                  style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)',
-                                    color: s.status === 'Active' ? 'var(--zoho-red)' : 'var(--zoho-green)' }}>
-                                  {s.status === 'Active' ? 'Deactivate' : 'Activate'}
-                                </button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                    </tbody>
-                  </table>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
+                <div style={{ minWidth: '900px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+                  {/* Header row */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '110px 1.6fr 1.8fr 1.2fr 1.2fr 1.5fr 100px 60px',
+                    gap: '1rem',
+                    padding: '0.75rem 1.25rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    <div>Code</div>
+                    <div>Name</div>
+                    <div>Email</div>
+                    <div>Department</div>
+                    <div>Phone</div>
+                    <div>Assigned Doctor</div>
+                    <div>Status</div>
+                    <div style={{ textAlign: 'center' }}>Actions</div>
+                  </div>
+
+                  {(staffTab === 'receptionist' ? receptionists : nurses).length === 0 ? (
+                    <div className="saas-card" style={{ padding: '3rem', textAlign: 'center', backgroundColor: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>No records. Register one to get started.</span>
+                    </div>
+                  ) : (
+                    (staffTab === 'receptionist' ? receptionists : nurses).map((s: any) => (
+                      <div
+                        key={s.id}
+                        className="saas-card animate-fade-in"
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: '110px 1.6fr 1.8fr 1.2fr 1.2fr 1.5fr 100px 60px',
+                          gap: '1rem',
+                          alignItems: 'center',
+                          padding: '1.25rem',
+                          backgroundColor: '#ffffff',
+                          border: '1px solid var(--border-color)',
+                          borderRadius: '10px',
+                          boxShadow: 'var(--shadow-sm)',
+                          position: 'relative'
+                        }}
+                      >
+                        <div>
+                          <code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px', color: 'var(--text-primary)' }}>
+                            {s.employeeCode}
+                          </code>
+                        </div>
+                        <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{s.userName}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{s.email}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{s.department || '—'}</div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{s.phoneNumber || '—'}</div>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: s.doctorName ? 'var(--text-primary)' : 'var(--text-muted)' }}>
+                          {s.doctorName ? `🩺 ${s.doctorName}` : 'All Doctors'}
+                        </div>
+                        <div>{statusBadge(s.status)}</div>
+                        <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                          <button
+                            onClick={() => setActiveActionMenu(activeActionMenu?.type === 'staff' && activeActionMenu?.id === s.id ? null : { type: 'staff', id: s.id })}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--text-secondary)', padding: '0.25rem', fontWeight: 'bold' }}
+                          >
+                            ⋮
+                          </button>
+                          {activeActionMenu?.type === 'staff' && activeActionMenu?.id === s.id && (
+                            <div style={{
+                              position: 'absolute',
+                              right: '24px',
+                              top: '-10px',
+                              backgroundColor: '#ffffff',
+                              border: '1px solid var(--border-color)',
+                              borderRadius: '8px',
+                              boxShadow: 'var(--shadow-md)',
+                              zIndex: 100,
+                              minWidth: '130px',
+                              padding: '0.4rem 0',
+                              display: 'flex',
+                              flexDirection: 'column'
+                            }}>
+                              <button
+                                onClick={() => { openStaffEdit(s); setActiveActionMenu(null); }}
+                                style={{ width: '100%', padding: '0.5rem 1rem', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 600 }}
+                              >
+                                📝 Edit Details
+                              </button>
+                              <button
+                                onClick={() => {
+                                  withFeedback(async () => {
+                                    if (staffTab === 'receptionist') await api.toggleReceptionistStatus(s.id);
+                                    else await api.toggleNurseStatus(s.id);
+                                    await loadStaff();
+                                  }, 'Status updated.');
+                                  setActiveActionMenu(null);
+                                }}
+                                style={{
+                                  width: '100%',
+                                  padding: '0.5rem 1rem',
+                                  border: 'none',
+                                  background: 'none',
+                                  textAlign: 'left',
+                                  cursor: 'pointer',
+                                  fontSize: '0.8rem',
+                                  color: s.status === 'Active' ? 'var(--zoho-red)' : 'var(--zoho-green)',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {s.status === 'Active' ? '🚫 Deactivate' : '✅ Activate'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </>
@@ -965,47 +1173,120 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
             )}
           </div>
 
-          <div className="saas-card" style={{ padding: 0, overflow: 'hidden' }}>
-            <div style={{ overflowX: 'auto' }}>
-              <table className="saas-table text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                <thead>
-                  <tr><th>Code</th><th>Full Name</th><th>Age / Gender</th><th>Phone</th><th>Blood Group</th><th>Emergency Contact</th>{canRegisterPatient && <th style={{ textAlign: 'center' }}>Actions</th>}</tr>
-                </thead>
-                <tbody>
-                  {patients.length === 0
-                    ? <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No patient records found.</td></tr>
-                    : patients.map((p: any) => {
-                        const age = p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : '—';
-                        return (
-                          <tr key={p.id}>
-                            <td><code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px' }}>{p.patientCode}</code></td>
-                            <td>
-                              <div style={{ fontWeight: 700 }}>{p.fullName}</div>
-                              {p.email && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.email}</div>}
-                            </td>
-                            <td style={{ fontSize: '0.85rem' }}>{age} yrs / {p.gender}</td>
-                            <td style={{ fontSize: '0.85rem' }}>
-                              {p.phoneNumber}
-                              {p.whatsAppConsent && <span title="WhatsApp Enabled" style={{ marginLeft: '0.35rem', cursor: 'help' }}>💬</span>}
-                            </td>
-                            <td><span className="badge badge-info">{p.bloodGroup}</span></td>
-                            <td style={{ fontSize: '0.85rem' }}>{p.emergencyContact || '—'}</td>
-                            {canRegisterPatient && (
-                              <td>
-                                <div style={{ display: 'flex', justifyContent: 'center', gap: '0.4rem' }}>
-                                  <button onClick={() => openPatientEdit(p)} className="btn btn-secondary"
-                                    style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)' }}>Edit</button>
-                                  <button onClick={() => { if (window.confirm('Delete this patient record?')) withFeedback(() => api.deletePatient(p.id).then(() => loadPatients()), 'Patient deleted.'); }}
-                                    className="btn btn-secondary"
-                                    style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', borderRadius: 'var(--radius-sm)', color: 'var(--zoho-red)' }}>Delete</button>
-                                </div>
-                              </td>
+          <div style={{ overflowX: 'auto', width: '100%' }}>
+            <div style={{ minWidth: '860px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+
+              {/* Header row */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '110px 2fr 1fr 1.2fr 100px 1.5fr 60px',
+                gap: '1rem',
+                padding: '0.75rem 1.25rem',
+                fontSize: '0.75rem',
+                fontWeight: 700,
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                <div>Code</div>
+                <div>Full Name</div>
+                <div>Age / Gender</div>
+                <div>Phone</div>
+                <div>Blood Group</div>
+                <div>Emergency Contact</div>
+                <div style={{ textAlign: 'center' }}>Actions</div>
+              </div>
+
+              {patients.length === 0 ? (
+                <div className="saas-card" style={{ padding: '3rem', textAlign: 'center', backgroundColor: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+                  <span style={{ color: 'var(--text-muted)' }}>No patient records found.</span>
+                </div>
+              ) : (
+                patients.map((p: any) => {
+                  const age = p.dateOfBirth ? new Date().getFullYear() - new Date(p.dateOfBirth).getFullYear() : '—';
+                  return (
+                    <div
+                      key={p.id}
+                      className="saas-card animate-fade-in"
+                      style={{
+                        display: 'grid',
+                        gridTemplateColumns: '110px 2fr 1fr 1.2fr 100px 1.5fr 60px',
+                        gap: '1rem',
+                        alignItems: 'center',
+                        padding: '1.25rem',
+                        backgroundColor: '#ffffff',
+                        border: '1px solid var(--border-color)',
+                        borderRadius: '10px',
+                        boxShadow: 'var(--shadow-sm)',
+                        position: 'relative'
+                      }}
+                    >
+                      <div>
+                        <code style={{ fontWeight: 700, fontSize: '0.8rem', background: 'var(--bg-primary)', padding: '0.15rem 0.4rem', borderRadius: '4px', color: 'var(--text-primary)' }}>
+                          {p.patientCode}
+                        </code>
+                      </div>
+                      <div>
+                        <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{p.fullName}</div>
+                        {p.email && <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{p.email}</div>}
+                      </div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{age} yrs / {p.gender}</div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
+                        {p.phoneNumber}
+                        {p.whatsAppConsent && <span title="WhatsApp Enabled" style={{ marginLeft: '0.35rem', cursor: 'help' }}>💬</span>}
+                      </div>
+                      <div><span className="badge badge-info">{p.bloodGroup}</span></div>
+                      <div style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>{p.emergencyContact || '—'}</div>
+                      <div style={{ display: 'flex', justifyContent: 'center', position: 'relative' }}>
+                        {canRegisterPatient ? (
+                          <>
+                            <button
+                              onClick={() => setActiveActionMenu(activeActionMenu?.type === 'patient' && activeActionMenu?.id === p.id ? null : { type: 'patient', id: p.id })}
+                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', color: 'var(--text-secondary)', padding: '0.25rem', fontWeight: 'bold' }}
+                            >
+                              ⋮
+                            </button>
+                            {activeActionMenu?.type === 'patient' && activeActionMenu?.id === p.id && (
+                              <div style={{
+                                position: 'absolute',
+                                right: '24px',
+                                top: '-10px',
+                                backgroundColor: '#ffffff',
+                                border: '1px solid var(--border-color)',
+                                borderRadius: '8px',
+                                boxShadow: 'var(--shadow-md)',
+                                zIndex: 100,
+                                minWidth: '120px',
+                                padding: '0.4rem 0',
+                                display: 'flex',
+                                flexDirection: 'column'
+                              }}>
+                                <button
+                                  onClick={() => { openPatientEdit(p); setActiveActionMenu(null); }}
+                                  style={{ width: '100%', padding: '0.5rem 1rem', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--text-primary)', fontWeight: 600 }}
+                                >
+                                  📝 Edit Details
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    if (window.confirm('Delete this patient record?')) {
+                                      withFeedback(() => api.deletePatient(p.id).then(() => loadPatients()), 'Patient deleted.');
+                                    }
+                                    setActiveActionMenu(null);
+                                  }}
+                                  style={{ width: '100%', padding: '0.5rem 1rem', border: 'none', background: 'none', textAlign: 'left', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--zoho-red)', fontWeight: 600 }}
+                                >
+                                  🗑️ Delete
+                                </button>
+                              </div>
                             )}
-                          </tr>
-                        );
-                      })}
-                </tbody>
-              </table>
+                          </>
+                        ) : <span style={{ color: 'var(--text-muted)' }}>—</span>}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
             </div>
           </div>
 
@@ -1257,56 +1538,104 @@ export const DoctorModuleConsole: React.FC<DoctorModuleConsoleProps> = ({
                 </div>
               )}
 
-              <div className="saas-card" style={{ padding: 0, overflow: 'hidden' }}>
-                <div style={{ overflowX: 'auto' }}>
-                  <table className="saas-table text-left" style={{ width: '100%', borderCollapse: 'collapse' }}>
-                    <thead>
-                      <tr><th>Time</th><th>Patient</th><th>Doctor</th><th>Specialization</th><th>Type</th><th>Status</th>{canBookAppointment && <th style={{ textAlign: 'center' }}>Action</th>}</tr>
-                    </thead>
-                    <tbody>
-                      {activeDayApps.length === 0
-                        ? <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '3rem' }}>No appointments on this date.</td></tr>
-                        : activeDayApps.map((a: any) => {
-                            const timeStr = new Date(a.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-                            return (
-                              <tr key={a.id}>
-                                <td style={{ fontWeight: 800 }}>⏰ {timeStr}</td>
-                                <td>
-                                  <div style={{ fontWeight: 700 }}>{a.patientName}</div>
-                                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{a.patientCode}</div>
-                                </td>
-                                <td style={{ fontWeight: 600 }}>Dr. {a.doctorName}</td>
-                                <td><span className="badge badge-info">{a.specialization}</span></td>
-                                <td>
-                                  <span className={`badge ${a.appointmentType === 'WalkIn' ? 'badge-warning' : 'badge-success'}`}>
-                                    {a.appointmentType === 'WalkIn' ? '🚶 Walk-In' : '📋 Scheduled'}
-                                  </span>
-                                </td>
-                                <td>
-                                  {canBookAppointment ? (
-                                    <select value={a.status} onChange={e => handleUpdateAppStatus(a.id, e.target.value)}
-                                      style={{ padding: '0.25rem 0.5rem', border: '1px solid var(--border-color)', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', background: 'var(--bg-secondary)' }}>
-                                      <option>Pending</option>
-                                      <option>Confirmed</option>
-                                      <option>Completed</option>
-                                      <option>Cancelled</option>
-                                    </select>
-                                  ) : statusBadge(a.status)}
-                                </td>
-                                {canBookAppointment && (
-                                  <td style={{ textAlign: 'center' }}>
-                                    <button disabled={a.status === 'Completed'} onClick={() => handleUpdateAppStatus(a.id, 'Completed')}
-                                      className="btn btn-secondary"
-                                      style={{ padding: '0.2rem 0.55rem', fontSize: '0.75rem', color: 'var(--zoho-green)', borderRadius: 'var(--radius-sm)' }}>
-                                      ✓ Done
-                                    </button>
-                                  </td>
-                                )}
-                              </tr>
-                            );
-                          })}
-                    </tbody>
-                  </table>
+              <div style={{ overflowX: 'auto', width: '100%' }}>
+                <div style={{ minWidth: '900px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {/* Header row */}
+                  <div style={{
+                    display: 'grid',
+                    gridTemplateColumns: '90px 1.8fr 1.4fr 1.2fr 110px 1fr 60px',
+                    gap: '1rem',
+                    padding: '0.75rem 1.25rem',
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    color: 'var(--text-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    <div>Time</div>
+                    <div>Patient</div>
+                    <div>Doctor</div>
+                    <div>Specialization</div>
+                    <div>Type</div>
+                    <div>Status</div>
+                    {canBookAppointment && <div style={{ textAlign: 'center' }}>Action</div>}
+                  </div>
+
+                  {activeDayApps.length === 0 ? (
+                    <div className="saas-card" style={{ padding: '3rem', textAlign: 'center', backgroundColor: '#ffffff', border: '1px solid var(--border-color)', borderRadius: '10px' }}>
+                      <span style={{ color: 'var(--text-muted)' }}>No appointments on this date.</span>
+                    </div>
+                  ) : (
+                    activeDayApps.map((a: any) => {
+                      const timeStr = new Date(a.appointmentDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                      return (
+                        <div
+                          key={a.id}
+                          className="saas-card animate-fade-in"
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: '90px 1.8fr 1.4fr 1.2fr 110px 1fr 60px',
+                            gap: '1rem',
+                            alignItems: 'center',
+                            padding: '1.25rem',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid var(--border-color)',
+                            borderRadius: '10px',
+                            boxShadow: 'var(--shadow-sm)',
+                            borderLeft: a.status === 'Confirmed' ? '3px solid var(--zoho-green)'
+                              : a.status === 'Pending' ? '3px solid var(--zoho-blue)'
+                              : a.status === 'Cancelled' ? '3px solid var(--zoho-red)'
+                              : '3px solid var(--border-color)'
+                          }}
+                        >
+                          <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontSize: '0.9rem' }}>⏰ {timeStr}</div>
+                          <div>
+                            <div style={{ fontWeight: 700, color: 'var(--text-primary)' }}>{a.patientName}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{a.patientCode}</div>
+                          </div>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Dr. {a.doctorName}</div>
+                          <div><span className="badge badge-info">{a.specialization}</span></div>
+                          <div>
+                            <span className={`badge ${a.appointmentType === 'WalkIn' ? 'badge-warning' : 'badge-success'}`}>
+                              {a.appointmentType === 'WalkIn' ? '🚶 Walk-In' : '📋 Scheduled'}
+                            </span>
+                          </div>
+                          <div>
+                            {canBookAppointment ? (
+                              <select value={a.status} onChange={e => handleUpdateAppStatus(a.id, e.target.value)}
+                                style={{ padding: '0.3rem 0.5rem', border: '1px solid var(--border-color)', borderRadius: '6px', cursor: 'pointer', fontSize: '0.8rem', background: 'var(--bg-secondary)', width: '100%' }}>
+                                <option>Pending</option>
+                                <option>Confirmed</option>
+                                <option>Completed</option>
+                                <option>Cancelled</option>
+                              </select>
+                            ) : statusBadge(a.status)}
+                          </div>
+                          {canBookAppointment && (
+                            <div style={{ display: 'flex', justifyContent: 'center' }}>
+                              <button
+                                disabled={a.status === 'Completed'}
+                                onClick={() => handleUpdateAppStatus(a.id, 'Completed')}
+                                style={{
+                                  background: a.status === 'Completed' ? '#f1f5f9' : '#dcfce7',
+                                  border: '1px solid',
+                                  borderColor: a.status === 'Completed' ? '#cbd5e1' : '#86efac',
+                                  color: a.status === 'Completed' ? '#94a3b8' : 'var(--zoho-green)',
+                                  borderRadius: '6px',
+                                  padding: '0.3rem 0.6rem',
+                                  fontSize: '0.75rem',
+                                  fontWeight: 700,
+                                  cursor: a.status === 'Completed' ? 'not-allowed' : 'pointer'
+                                }}
+                              >
+                                ✓ Done
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
               </div>
             </div>

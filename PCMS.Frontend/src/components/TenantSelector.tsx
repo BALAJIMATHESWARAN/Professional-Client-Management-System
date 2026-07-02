@@ -54,10 +54,14 @@ export const TenantSelector: React.FC<TenantSelectorProps> = ({
         <div>
           <span style={{
             fontSize: '0.8rem',
-            color: 'var(--zoho-blue)',
+            color: 'var(--altezza-accent-hover)',
             fontWeight: 700,
             textTransform: 'uppercase',
-            letterSpacing: '0.1em'
+            letterSpacing: '0.1em',
+            background: 'rgba(250, 204, 21, 0.12)',
+            padding: '0.2rem 0.6rem',
+            borderRadius: '4px',
+            border: '1px solid rgba(250, 204, 21, 0.3)'
           }}>Logged in as {userName}</span>
           <h1 style={{ marginTop: '0.4rem', fontSize: '2.1rem', fontWeight: 800 }}>Select Workspace Portal</h1>
         </div>
